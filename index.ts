@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════════
- *  TARKAM Discord Bot — Premium Edition ✦
+ *  TARKAM Discord Bot — Clean Edition ✦
  *  Connected to Neon PostgreSQL (same DB as idolmeta.fun)
  *
  *  Features:
@@ -9,10 +9,11 @@
  *  - Auto-update leaderboard messages
  *  - Reaction roles in #pilih-role
  *
- *  Design: Premium, Elegant, Aesthetic
- *  - Rich Unicode box-drawing characters for visual hierarchy
- *  - Cohesive gold/blue/pink color palette matching idolmeta.fun
- *  - Proper embed structure with author, thumbnails, dividers
+ *  Design: Clean, Readable, Professional
+ *  - Embed fields for structured data (columns, rows)
+ *  - Monospace code blocks for tabular data (leaderboard)
+ *  - Minimal decoration — let Discord's layout do the work
+ *  - Subtle elegance: less noise, more clarity
  *  ═══════════════════════════════════════════════════════════════════
  */
 
@@ -58,58 +59,15 @@ async function queryWithTimeout<T>(promise: Promise<T>, timeoutMs = 10000): Prom
   ]);
 }
 
-// ═══ PREMIUM COLOR PALETTE ═══
+// ═══ COLOR PALETTE ═══
 const C = {
-  gold: '#F5C518',        // IMDb-style gold — premium & elegant
-  goldWarm: '#EFF923',    // Warm gold for highlights
-  goldDark: '#D4A017',    // Deep antique gold
-  male: '#4A9EFF',        // Refined blue (softer than pure cyan)
-  maleDark: '#2E6BC6',    // Deep blue
-  female: '#FF4D8E',      // Refined pink (softer than hot pink)
-  femaleDark: '#D6336C',  // Deep rose
-  success: '#2ECC71',     // Emerald green
-  info: '#5865F2',        // Discord blurple
-  warning: '#F1C40F',     // Warm yellow
-  danger: '#E74C3C',      // Rich red
-  neutral: '#95A5A6',     // Muted gray
-  dark: '#1A1A2E',        // Deep navy
-  midnight: '#16213E',    // Midnight blue
-};
-
-// ═══ PREMIUM UNICODE CHARACTERS ═══
-const U = {
-  // Dividers & Lines
-  divider: '━━━━━━━━━━━━━━━━━━━━━━',
-  dividerThin: '╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌',
-  dividerDot: '· · · · · · · · · · · · · · ·',
-  leftBar: '▎',
-  diamond: '◆',
-  bullet: '●',
-  arrow: '→',
-  arrowRight: '➜',
-  star: '★',
-  emptyStar: '☆',
-  crown: '👑',
-  trophy: '🏆',
-  fire: '🔥',
-  gem: '💎',
-  music: '🎵',
-  sword: '⚔️',
-  shield: '🛡️',
-  medal: '🏅',
-  check: '✅',
-  live: '🔴',
-  pending: '⏳',
-  lock: '🔒',
-  sparkles: '✨',
-  sparkle: '✦',
-  // Box drawing
-  tl: '╭', tr: '╮', bl: '╰', br: '╯',
-  h: '─', v: '│',
-  // Ranking
-  rank1: '🥇',
-  rank2: '🥈',
-  rank3: '🥉',
+  gold: '#F5C518',
+  male: '#4A9EFF',
+  female: '#FF4D8E',
+  success: '#2ECC71',
+  info: '#5865F2',
+  danger: '#E74C3C',
+  neutral: '#95A5A6',
 };
 
 // ═══ BRANDING ═══
@@ -118,8 +76,8 @@ const BRAND = {
   tagline: 'Idol Meta · Fan Made Edition',
   url: 'idolmeta.fun',
   footerIcon: 'https://idolmeta.fun/logo1.webp',
-  get footerText() { return `${U.sparkle} ${this.name} — ${this.url}`; },
-  get footerTextFull() { return `${U.sparkle} ${this.name} · ${this.tagline} — ${this.url}`; },
+  get footerText() { return `✦ ${this.name} — ${this.url}`; },
+  get footerTextFull() { return `✦ ${this.name} · ${this.tagline} — ${this.url}`; },
 };
 
 // ═══ CHANNEL MAP ═══ (will be resolved on ready)
@@ -332,10 +290,10 @@ async function registerCommands() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  PREMIUM EMBED BUILDERS ✦
+//  HELPERS
 // ═══════════════════════════════════════════════════════════════
 
-// Helper: Division config
+// Division config
 function divConfig(division: string) {
   const isMale = division === 'male';
   return {
@@ -343,20 +301,18 @@ function divConfig(division: string) {
     emoji: isMale ? '♂' : '♀',
     label: isMale ? 'Cowo' : 'Cewe',
     color: isMale ? C.male : C.female,
-    colorDark: isMale ? C.maleDark : C.femaleDark,
-    icon: isMale ? U.music : U.shield,
   };
 }
 
-// Helper: Rank medal
+// Rank medal emoji
 function rankMedal(rank: number): string {
-  if (rank === 1) return U.rank1;
-  if (rank === 2) return U.rank2;
-  if (rank === 3) return U.rank3;
-  return `\`${String(rank).padStart(2, ' ')}\``;
+  if (rank === 1) return '🥇';
+  if (rank === 2) return '🥈';
+  if (rank === 3) return '🥉';
+  return `${rank}.`;
 }
 
-// Helper: Tier badge
+// Tier badge
 function tierBadge(tier: string): string {
   const t = tier?.toUpperCase();
   if (t === 'S') return '🌟 S-Tier';
@@ -364,78 +320,75 @@ function tierBadge(tier: string): string {
   return '✦ B-Tier';
 }
 
-// Helper: Win rate
+// Win rate
 function winRate(wins: number, matches: number): string {
   if (matches === 0) return '0%';
   return `${Math.round((wins / matches) * 100)}%`;
 }
 
-// Helper: Format number with dots (Indonesian style)
+// Format number with dots (Indonesian style)
 function fmtNum(n: number): string {
   return n.toLocaleString('id-ID');
 }
 
-// Helper: Progress bar
-function progressBar(value: number, max: number, length = 10): string {
-  const filled = Math.round((value / max) * length);
-  const empty = length - filled;
-  return '█'.repeat(Math.max(0, filled)) + '░'.repeat(Math.max(0, empty));
-}
-
 // ═══════════════════════════════════════════════════════════════
-//  LEADERBOARD EMBED — Premium Edition
+//  LEADERBOARD EMBED — Clean Table Design
+//  Uses monospace code block for spreadsheet-like readability
+//  Fields for summary stats only
 // ═══════════════════════════════════════════════════════════════
 
 function buildLeaderboardEmbed(players: any[], division: string) {
   const div = divConfig(division);
 
-  const description = players.map((p: any, i: number) => {
+  // Build monospace table in code block
+  const lines = players.map((p: any) => {
     const rank = Number(p.rank);
     const medal = rankMedal(rank);
-    const streakStr = p.streak > 1 ? ` ${U.fire}${p.streak}` : '';
-    const wr = winRate(p.totalWins, p.matches);
-    const ptsBar = progressBar(p.points, Math.max(...players.map((x: any) => x.points)), 8);
+    const tag = p.gamertag.length > 14 ? p.gamertag.slice(0, 13) + '…' : p.gamertag;
+    const pts = fmtNum(p.points).padStart(6);
+    const w = `${p.totalWins}W`.padStart(3);
+    const mvp = `${p.totalMvp}💎`;
+    const streak = p.streak > 1 ? ` 🔥${p.streak}` : '';
 
-    // Top 3 get special formatting
-    if (rank <= 3) {
-      return (
-        `${medal}  **${p.gamertag}**${streakStr}\n` +
-        `${U.leftBar} ${ptsBar}  **${fmtNum(p.points)}** pts · ${wr} WR\n` +
-        `${U.leftBar} ${p.totalWins}W / ${p.matches}M · ${U.gem} ${p.totalMvp} MVP`
-      );
-    }
+    return ` ${medal}  ${tag.padEnd(15)} ${pts}  ${w}  ${mvp}${streak}`;
+  });
 
-    return (
-      `${medal}  **${p.gamertag}**${streakStr}\n` +
-      `${U.leftBar} **${fmtNum(p.points)}** pts · ${wr} · ${p.totalWins}W · ${U.gem}${p.totalMvp}`
-    );
-  }).join(`\n${U.dividerDot}\n`);
+  const table = '```\n' + lines.join('\n') + '\n```';
+
+  // Summary fields
+  const totalPts = players.reduce((s: number, p: any) => s + Number(p.points), 0);
+  const avgPts = Math.round(totalPts / players.length);
+  const topWins = players.reduce((s: number, p: any) => s + Number(p.totalWins), 0);
+  const topMvp = players.reduce((s: number, p: any) => s + Number(p.totalMvp), 0);
 
   return new EmbedBuilder()
     .setColor(div.color)
     .setAuthor({
-      name: `${U.trophy}  LEADERBOARD ${div.emoji} ${div.label.toUpperCase()}`,
+      name: `🏆 LEADERBOARD ${div.emoji} ${div.label.toUpperCase()}`,
       iconURL: BRAND.footerIcon,
     })
-    .setDescription(
-      `${U.divider}\n` +
-      description +
-      `\n${U.divider}\n` +
-      `${U.sparkles} Top ${players.length} divisi ${div.label} season ini`
+    .setDescription(table)
+    .addFields(
+      { name: '👥 Players', value: `${players.length}`, inline: true },
+      { name: '⚡ Avg Points', value: `${fmtNum(avgPts)}`, inline: true },
+      { name: '⚔️ Total Wins', value: `${topWins}`, inline: true },
     )
     .setFooter({ text: BRAND.footerText, iconURL: BRAND.footerIcon })
     .setTimestamp();
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  MATCH RESULT EMBED — Premium Edition
+//  MATCH RESULT EMBED — Inline Fields Design
+//  Uses fields for team names and scores in a clean row layout
 // ═══════════════════════════════════════════════════════════════
 
 function buildMatchResultEmbed(match: any) {
   const div = divConfig(match.division);
   const s1 = match.score1 ?? 0;
   const s2 = match.score2 ?? 0;
-  const winner = s1 > s2 ? match.team1_name : match.team2_name;
+  const isT1Winner = s1 > s2;
+  const isT2Winner = s2 > s1;
+  const winner = isT1Winner ? match.team1_name : match.team2_name;
   const isSweep = match.format === 'BO1'
     ? (s1 === 1 && s2 === 0) || (s1 === 0 && s2 === 1)
     : (s1 === 2 && s2 === 0) || (s1 === 0 && s2 === 2) || (s1 === 3 && s2 === 0) || (s1 === 0 && s2 === 3);
@@ -444,72 +397,75 @@ function buildMatchResultEmbed(match: any) {
   const roundName = roundNames[match.round] || `Round ${match.round}`;
   const bracketLabel = match.bracket === 'winners' ? "Winner's Bracket" : match.bracket === 'losers' ? "Loser's Bracket" : '';
 
-  // Score visualization
-  const t1Score = `${'■'.repeat(s1)}${'□'.repeat(Math.max(0, (match.format === 'BO1' ? 1 : 3) - s1))}`;
-  const t2Score = `${'■'.repeat(s2)}${'□'.repeat(Math.max(0, (match.format === 'BO1' ? 1 : 3) - s2))}`;
+  const t1Display = isT1Winner ? `🏆 ${match.team1_name}` : match.team1_name;
+  const t2Display = isT2Winner ? `🏆 ${match.team2_name}` : match.team2_name;
+  const scoreDisplay = `**${s1} — ${s2}**`;
 
-  const isT1Winner = s1 > s2;
-  const isT2Winner = s2 > s1;
+  const fields: any[] = [
+    { name: t1Display, value: `\`${'■'.repeat(s1)}${'□'.repeat(Math.max(0, (match.format === 'BO1' ? 1 : 3) - s1))}\``, inline: true },
+    { name: 'Score', value: scoreDisplay, inline: true },
+    { name: t2Display, value: `\`${'■'.repeat(s2)}${'□'.repeat(Math.max(0, (match.format === 'BO1' ? 1 : 3) - s2))}\``, inline: true },
+  ];
+
+  // Result line in description
+  const context = `${roundName}${bracketLabel ? ` · ${bracketLabel}` : ''} · ${match.format}`;
+  const resultLine = `🏆 **${winner}** maju ke ronde selanjutnya!${isSweep ? ' _(Sweep!)_' : ''}`;
+  const mvpLine = match.mvp_tag ? `\n💎 MVP: **${match.mvp_tag}**` : '';
 
   return new EmbedBuilder()
     .setColor(div.color)
     .setAuthor({
-      name: `${U.sword}  MATCH RESULT — W${match.weekNumber} ${div.emoji} ${div.label.toUpperCase()}`,
+      name: `⚔️ MATCH RESULT — W${match.weekNumber} ${div.emoji} ${div.label.toUpperCase()}`,
       iconURL: BRAND.footerIcon,
     })
-    .setDescription(
-      `${U.divider}\n` +
-      `${roundName}${bracketLabel ? ` · ${bracketLabel}` : ''} · ${match.format}\n` +
-      `${U.dividerDot}\n\n` +
-      `${isT1Winner ? U.crown : '    '} **${match.team1_name}**\n` +
-      `${U.leftBar} ${t1Score}  **${s1}**\n\n` +
-      `          ${U.sword}  VS\n\n` +
-      `${isT2Winner ? U.crown : '    '} **${match.team2_name}**\n` +
-      `${U.leftBar} ${t2Score}  **${s2}**\n\n` +
-      `${U.dividerDot}\n` +
-      `${U.trophy} **${winner}** maju ke ronde selanjutnya!${isSweep ? ' _(Sweep!)_' : ''}` +
-      (match.mvp_tag ? `\n${U.gem} MVP: **${match.mvp_tag}**` : '')
-    )
+    .setDescription(`${context}\n${resultLine}${mvpLine}`)
+    .addFields(fields)
     .setFooter({ text: BRAND.footerText, iconURL: BRAND.footerIcon })
     .setTimestamp(new Date(match.completedAt));
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  PROFILE EMBED — Premium Edition
+//  PROFILE EMBED — Player Card Design
+//  Inline fields for stats organized in rows
 // ═══════════════════════════════════════════════════════════════
 
 function buildProfileEmbed(player: any) {
   const div = divConfig(player.division);
   const wr = winRate(player.totalWins, player.matches);
-  const ptsBar = progressBar(player.points, 500, 12);
+
+  const descParts: string[] = [
+    tierBadge(player.tier) + ` · ${div.emoji} ${div.label}` + (player.city ? ` · 📍 ${player.city}` : ''),
+    player.name,
+  ];
 
   return new EmbedBuilder()
     .setColor(div.color)
     .setAuthor({
-      name: `${div.icon}  ${player.gamertag}`,
+      name: `${player.gamertag}`,
       iconURL: BRAND.footerIcon,
     })
-    .setDescription(
-      `${U.divider}\n` +
-      `${tierBadge(player.tier)} · ${div.emoji} ${div.label}` +
-      (player.city ? ` · 📍 ${player.city}` : '') +
-      `\n${U.dividerDot}\n` +
-      `${player.name}\n\n` +
-      `${U.divider}\n` +
-      `⭐  **POINTS**\n` +
-      `${U.leftBar} ${ptsBar}  **${fmtNum(player.points)}**\n\n` +
-      `${U.dividerDot}\n` +
-      `${U.trophy} **${player.totalWins}** Wins    ${U.gem} **${player.totalMvp}** MVP\n` +
-      `${U.fire} **${player.streak}** Streak (Max: ${player.maxStreak})    ${U.sword} **${player.matches}** Matches\n\n` +
-      `${U.divider}\n` +
-      `Win Rate: **${wr}**`
+    .setDescription(descParts.join('\n'))
+    .addFields(
+      // Row 1: Points & Win Rate
+      { name: '⭐ Points', value: `**${fmtNum(player.points)}**`, inline: true },
+      { name: '📈 Win Rate', value: `**${wr}**`, inline: true },
+      { name: '\u200B', value: '\u200B', inline: true }, // spacer for 3-col alignment
+      // Row 2: Wins & Matches
+      { name: '🏆 Wins', value: `**${player.totalWins}**`, inline: true },
+      { name: '⚔️ Matches', value: `**${player.matches}**`, inline: true },
+      { name: '\u200B', value: '\u200B', inline: true },
+      // Row 3: MVP & Streak
+      { name: '💎 MVP', value: `**${player.totalMvp}**`, inline: true },
+      { name: '🔥 Streak', value: `**${player.streak}** (max ${player.maxStreak})`, inline: true },
+      { name: '\u200B', value: '\u200B', inline: true },
     )
     .setFooter({ text: BRAND.footerTextFull, iconURL: BRAND.footerIcon })
     .setTimestamp();
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  BRACKET EMBED — Premium Edition
+//  BRACKET EMBED — Field-per-Round Design
+//  Each round gets its own field (full width) for clean layout
 // ═══════════════════════════════════════════════════════════════
 
 function buildBracketEmbed(data: any) {
@@ -517,7 +473,13 @@ function buildBracketEmbed(data: any) {
   const div = divConfig(t.division);
   const matches = data.matches;
 
-  const roundNames: Record<number, string> = { 1: '🏁 Grand Final', 2: '⚡ Semi Final', 3: '🔸 Quarter Final', 4: '🔹 Round of 16', 5: '◾ Round of 32' };
+  const roundNames: Record<number, string> = {
+    1: '🏁 Grand Final',
+    2: '⚡ Semi Final',
+    3: '🔸 Quarter Final',
+    4: '🔹 Round of 16',
+    5: '◾ Round of 32',
+  };
 
   // Group by round
   const byRound: Record<number, any[]> = {};
@@ -527,92 +489,121 @@ function buildBracketEmbed(data: any) {
     byRound[r].push(m);
   }
 
-  const descriptionParts: string[] = [];
+  const fields: any[] = [];
 
   for (const [round, roundMatches] of Object.entries(byRound).sort((a, b) => Number(a[0]) - Number(b[0]))) {
-    const rName = roundNames[Number(round)] || `🔘 Round ${round}`;
+    const rName = roundNames[Number(round)] || `Round ${round}`;
     const bracketLabel = roundMatches[0]?.bracket === 'winners' ? "Winner's" : roundMatches[0]?.bracket === 'losers' ? "Loser's" : '';
+    const fieldName = `${rName}${bracketLabel ? ` · ${bracketLabel}` : ''}`;
 
-    descriptionParts.push(`\n${rName}${bracketLabel ? ` · ${bracketLabel}` : ''}`);
+    const matchLines = roundMatches.map((m: any) => {
+      const s1 = m.score1;
+      const s2 = m.score2;
 
-    for (const m of roundMatches) {
-      const s1 = m.score1 ?? '?';
-      const s2 = m.score2 ?? '?';
-      const statusIcon = m.completedAt ? U.check : m.status === 'live' ? U.live : U.pending;
-      const isT1Win = typeof s1 === 'number' && typeof s2 === 'number' && s1 > s2;
-      const isT2Win = typeof s1 === 'number' && typeof s2 === 'number' && s2 > s1;
+      // Completed match
+      if (m.completedAt) {
+        const isT1Win = typeof s1 === 'number' && typeof s2 === 'number' && s1 > s2;
+        const isT2Win = typeof s1 === 'number' && typeof s2 === 'number' && s2 > s1;
+        const t1 = isT1Win ? `**${m.team1_name}**` : m.team1_name;
+        const t2 = isT2Win ? `**${m.team2_name}**` : m.team2_name;
+        const mvpStr = m.mvp_tag ? `  💎 ${m.mvp_tag}` : '';
+        return `✅ ${t1}  **${s1} — ${s2}**  ${t2}${mvpStr}`;
+      }
 
-      const t1Display = isT1Win ? `**${m.team1_name}**` : m.team1_name;
-      const t2Display = isT2Win ? `**${m.team2_name}**` : m.team2_name;
+      // Live match
+      if (m.status === 'live') {
+        return `🔴 ${m.team1_name}  vs  ${m.team2_name}`;
+      }
 
-      const scoreLine = `${statusIcon}  ${t1Display}  \`${s1} — ${s2}\`  ${t2Display}`;
-      const mvpLine = m.mvp_tag ? `     ${U.gem} MVP: **${m.mvp_tag}**` : '';
+      // Pending match
+      return `⏳ ${m.team1_name}  vs  ${m.team2_name}`;
+    });
 
-      descriptionParts.push(`${U.leftBar} ${scoreLine}`);
-      if (mvpLine) descriptionParts.push(`${U.leftBar} ${mvpLine}`);
-    }
+    fields.push({
+      name: fieldName,
+      value: matchLines.join('\n'),
+      inline: false,
+    });
   }
 
-  if (descriptionParts.length === 0) {
-    descriptionParts.push(`${U.divider}\n📋 Bracket belum tersedia untuk week ini\n${U.divider}`);
+  // If no matches
+  if (fields.length === 0) {
+    fields.push({
+      name: '📋 Bracket',
+      value: 'Bracket belum tersedia untuk week ini',
+      inline: false,
+    });
   }
 
-  // Status summary
+  // Status summary field
   const completedCount = matches.filter((m: any) => m.completedAt).length;
   const liveCount = matches.filter((m: any) => m.status === 'live').length;
   const pendingCount = matches.length - completedCount - liveCount;
 
-  const statusLine = [
-    completedCount > 0 ? `${U.check} ${completedCount} selesai` : '',
-    liveCount > 0 ? `${U.live} ${liveCount} live` : '',
-    pendingCount > 0 ? `${U.pending} ${pendingCount} menunggu` : '',
-  ].filter(Boolean).join(' · ') || 'Belum ada match';
+  const statusParts: string[] = [];
+  if (completedCount > 0) statusParts.push(`✅ ${completedCount} selesai`);
+  if (liveCount > 0) statusParts.push(`🔴 ${liveCount} live`);
+  if (pendingCount > 0) statusParts.push(`⏳ ${pendingCount} menunggu`);
+
+  const statusLine = statusParts.join(' · ') || 'Belum ada match';
+  fields.push({
+    name: '📊 Status',
+    value: `${statusLine} · ${matches.length} match total`,
+    inline: false,
+  });
 
   return new EmbedBuilder()
     .setColor(div.color)
     .setAuthor({
-      name: `${U.sword}  BRACKET W${t.weekNumber} ${div.emoji} ${div.label.toUpperCase()}`,
+      name: `⚔️ BRACKET W${t.weekNumber} ${div.emoji} ${div.label.toUpperCase()}`,
       iconURL: BRAND.footerIcon,
     })
-    .setDescription(
-      `${U.divider}\n` +
-      descriptionParts.join('\n') +
-      `\n${U.divider}\n` +
-      `${U.sparkles} ${statusLine} · ${matches.length} match total`
-    )
+    .addFields(fields)
     .setFooter({ text: BRAND.footerText, iconURL: BRAND.footerIcon })
     .setTimestamp();
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  JADWAL EMBED — Premium Edition
+//  JADWAL EMBED — Inline Fields Design
+//  Each tournament as an inline field, male/female side by side
 // ═══════════════════════════════════════════════════════════════
 
 function buildJadwalEmbed(tournaments: any[], week?: number) {
-  const description = tournaments.map((t: any) => {
+  const statusMap: Record<string, string> = {
+    'setup': '⚙️ Setup',
+    'registration': '🟢 Pendaftaran Dibuka!',
+    'approval': '🔄 Approval Peserta',
+    'team_generation': '🔀 Generate Tim',
+    'bracket_generation': '🏁 Generate Bracket',
+    'main_event': '🔴 LIVE',
+    'finalization': '📋 Finalisasi',
+    'completed': '✅ Selesai',
+  };
+
+  const fields: any[] = [];
+
+  for (const t of tournaments) {
     const div = divConfig(t.division);
-
-    const statusMap: Record<string, string> = {
-      'setup': '⚙️ Setup',
-      'registration': '🟢 Pendaftaran Dibuka!',
-      'approval': '🔄 Approval Peserta',
-      'team_generation': '🔀 Generate Tim',
-      'bracket_generation': '🏁 Generate Bracket',
-      'main_event': '🔴 LIVE — Berlangsung!',
-      'finalization': '📋 Finalisasi',
-      'completed': '✅ Selesai',
-    };
     const status = statusMap[t.status] || `❓ ${t.status}`;
-    const prizeStr = t.prizePool ? `\n${U.leftBar} 💰 Prize: Rp ${fmtNum(t.prizePool)}` : '';
-
+    const prizeStr = t.prizePool ? `\n💰 Rp ${fmtNum(t.prizePool)}` : '';
     const isLive = t.status === 'main_event' || t.status === 'finalization';
     const isRegOpen = t.status === 'registration' || t.status === 'approval';
+    const icon = isLive ? '🔴' : isRegOpen ? '🟢' : '';
 
-    return (
-      `${isLive ? U.live : isRegOpen ? '🟢' : div.icon} **W${t.weekNumber} ${div.emoji} ${div.label}**\n` +
-      `${U.leftBar} ${status}${prizeStr}`
-    );
-  }).join(`\n${U.dividerDot}\n`);
+    fields.push({
+      name: `${icon} W${t.weekNumber} ${div.emoji} ${div.label}`,
+      value: `${status}${prizeStr}`,
+      inline: true,
+    });
+  }
+
+  if (fields.length === 0) {
+    fields.push({
+      name: '📋 Jadwal',
+      value: 'Belum ada turnamen aktif',
+      inline: false,
+    });
+  }
 
   const title = week ? `📅 JADWAL — W${week}` : '📅 JADWAL TURNAMEN';
 
@@ -622,70 +613,57 @@ function buildJadwalEmbed(tournaments: any[], week?: number) {
       name: title,
       iconURL: BRAND.footerIcon,
     })
-    .setDescription(
-      `${U.divider}\n` +
-      (description || '📋 Belum ada turnamen aktif') +
-      `\n${U.divider}\n` +
-      `${U.sparkles} Cek lengkap di ${BRAND.url}`
-    )
-    .setFooter({ text: BRAND.footerText, iconURL: BRAND.footerIcon })
+    .addFields(fields)
+    .setFooter({ text: `${BRAND.footerText} · Cek lengkap di ${BRAND.url}`, iconURL: BRAND.footerIcon })
     .setTimestamp();
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  STATS EMBED — Premium Edition
+//  STATS EMBED — Inline Fields (3 per row)
+//  Clean dashboard-style layout
 // ═══════════════════════════════════════════════════════════════
 
 function buildStatsEmbed(stats: any) {
   return new EmbedBuilder()
     .setColor(C.gold)
     .setAuthor({
-      name: `${U.sparkles}  TARKAM STATISTIK`,
+      name: '📊 TARKAM STATISTIK',
       iconURL: BRAND.footerIcon,
     })
-    .setDescription(
-      `${U.divider}\n` +
-      `👥  **PEMAIN AKTIF**\n` +
-      `${U.leftBar} ${progressBar(stats.totalPlayers, 100, 12)}  **${fmtNum(stats.totalPlayers)}**\n\n` +
-      `${U.sword}  **MATCH SELESAI**\n` +
-      `${U.leftBar} ${progressBar(stats.totalMatches, 100, 12)}  **${fmtNum(stats.totalMatches)}**\n\n` +
-      `${U.trophy}  **SEASON AKTIF**\n` +
-      `${U.leftBar} Season **${stats.activeSeason}**\n\n` +
-      `${U.music}  **TURNAMEN AKTIF**\n` +
-      `${U.leftBar} **${stats.activeTournaments}** turnamen berjalan\n` +
-      `${U.divider}\n` +
-      `${U.sparkles} Data real-time dari ${BRAND.url}`
+    .addFields(
+      { name: '👥 Players', value: `**${fmtNum(stats.totalPlayers)}**`, inline: true },
+      { name: '⚔️ Matches', value: `**${fmtNum(stats.totalMatches)}**`, inline: true },
+      { name: '🏆 Season', value: `**${stats.activeSeason}**`, inline: true },
+      { name: '🏅 Tournaments', value: `**${stats.activeTournaments}** aktif`, inline: true },
     )
-    .setFooter({ text: BRAND.footerTextFull, iconURL: BRAND.footerIcon })
+    .setFooter({ text: `${BRAND.footerTextFull} · Real-time data`, iconURL: BRAND.footerIcon })
     .setTimestamp();
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  REACTION ROLES EMBED — Premium Edition
+//  REACTION ROLES EMBED — Clean Design
 // ═══════════════════════════════════════════════════════════════
 
 function buildReactionRolesEmbed() {
   return new EmbedBuilder()
     .setColor(C.gold)
     .setAuthor({
-      name: `${U.sparkles}  PILIH ROLE KAMU`,
+      name: '🎭 PILIH ROLE KAMU',
       iconURL: BRAND.footerIcon,
     })
     .setDescription(
-      `${U.divider}\n` +
-      `React dengan emoji di bawah untuk mendapat role:\n\n` +
-      `🟢  —  🎮 **Peserta Cowo**\n` +
-      `🔴  —  💃 **Peserta Cewe**\n` +
-      `💎  —  💎 **Supporter**\n` +
-      `🎵  —  🎵 **Idol Meta Fan**\n` +
-      `${U.divider}\n` +
-      `${U.sparkles} Klik emoji untuk auto-assign role`
+      'React dengan emoji di bawah untuk mendapat role:\n\n' +
+      '🟢  —  🎮 **Peserta Cowo**\n' +
+      '🔴  —  💃 **Peserta Cewe**\n' +
+      '💎  —  💎 **Supporter**\n' +
+      '🎵  —  🎵 **Idol Meta Fan**'
     )
     .setFooter({ text: BRAND.footerText, iconURL: BRAND.footerIcon });
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  MATCH ANNOUNCEMENT EMBED — Premium Edition
+//  MATCH ANNOUNCEMENT EMBED — Clean List Design
+//  One line per match with winner highlighted
 // ═══════════════════════════════════════════════════════════════
 
 function buildMatchAnnouncementEmbed(newMatches: any[]) {
@@ -694,22 +672,17 @@ function buildMatchAnnouncementEmbed(newMatches: any[]) {
     const s1 = m.score1 ?? 0;
     const s2 = m.score2 ?? 0;
     const winner = s1 > s2 ? m.team1_name : m.team2_name;
-    return `${U.check} **${m.team1_name}** \`${s1} — ${s2}\` **${m.team2_name}** → **${winner}**`;
+    return `✅ **${m.team1_name}** \`${s1} — ${s2}\` **${m.team2_name}** → **${winner}**`;
   });
 
   return new EmbedBuilder()
     .setColor(C.gold)
     .setAuthor({
-      name: `${U.sparkles}  ${newMatches.length} MATCH BARU! — W${newMatches[0].weekNumber} ${div.emoji} ${div.label.toUpperCase()}`,
+      name: `⚡ ${newMatches.length} MATCH BARU! — W${newMatches[0].weekNumber} ${div.emoji} ${div.label.toUpperCase()}`,
       iconURL: BRAND.footerIcon,
     })
-    .setDescription(
-      `${U.divider}\n` +
-      matchLines.join('\n') +
-      `\n${U.divider}\n` +
-      `${U.sparkles} Detail lengkap di ${BRAND.url}`
-    )
-    .setFooter({ text: BRAND.footerText, iconURL: BRAND.footerIcon })
+    .setDescription(matchLines.join('\n'))
+    .setFooter({ text: `${BRAND.footerText} · Detail di ${BRAND.url}`, iconURL: BRAND.footerIcon })
     .setTimestamp();
 }
 
@@ -724,7 +697,7 @@ async function handleLeaderboard(interaction: ChatInputCommandInteraction) {
   try {
     const players = await getLeaderboard(division, 10);
     if (!players.length) {
-      await interaction.editReply(`${U.divider}\n📋 Belum ada data leaderboard untuk divisi ini.\n${U.divider}`);
+      await interaction.editReply('📋 Belum ada data leaderboard untuk divisi ini.');
       return;
     }
     const embed = buildLeaderboardEmbed(players, division);
@@ -745,7 +718,7 @@ async function handleBracket(interaction: ChatInputCommandInteraction) {
     if (!data) {
       const div = divConfig(division);
       const weekStr = week ? ` W${week}` : '';
-      await interaction.editReply(`${U.divider}\n📋 Belum ada bracket untuk ${div.emoji} ${div.label}${weekStr}.\n${U.divider}`);
+      await interaction.editReply(`📋 Belum ada bracket untuk ${div.emoji} ${div.label}${weekStr}.`);
       return;
     }
     const embed = buildBracketEmbed(data);
@@ -764,7 +737,7 @@ async function handleSkor(interaction: ChatInputCommandInteraction) {
   try {
     const matches = await getRecentMatchResults(limit, division, week);
     if (!matches.length) {
-      await interaction.editReply(`${U.divider}\n📋 Belum ada hasil pertandingan.\n${U.divider}`);
+      await interaction.editReply('📋 Belum ada hasil pertandingan.');
       return;
     }
     const embeds = matches.map((m: any) => buildMatchResultEmbed(m));
@@ -781,7 +754,7 @@ async function handleProfil(interaction: ChatInputCommandInteraction) {
   try {
     const player = await getPlayerByGamertag(gamertag);
     if (!player) {
-      await interaction.editReply(`${U.divider}\n📋 Pemain **"${gamertag}"** tidak ditemukan.\n${U.divider}`);
+      await interaction.editReply(`📋 Pemain **"${gamertag}"** tidak ditemukan.`);
       return;
     }
     const embed = buildProfileEmbed(player);
@@ -1008,7 +981,7 @@ const client = new Client({
 });
 
 client.once(Events.ClientReady, async () => {
-  console.log(`${U.sparkles} TARKAM Bot Premium online: ${client.user?.tag}`);
+  console.log(`✦ TARKAM Bot online: ${client.user?.tag}`);
 
   await resolveChannels();
   await registerCommands();

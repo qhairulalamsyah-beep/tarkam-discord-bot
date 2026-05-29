@@ -9,11 +9,11 @@
     "dev": "npx tsx watch index.ts"
   },
   "dependencies": {
-    "discord.js": "^14.16.3",
-    "@neondatabase/serverless": "^1.0.0"
+    "@neondatabase/serverless": "^1.0.0",
+    "discord.js": "^14.16.3"
   },
   "devDependencies": {
     "tsx": "^4.19.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.9.3"
   }
 }
