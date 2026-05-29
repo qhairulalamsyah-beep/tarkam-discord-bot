@@ -332,34 +332,38 @@ function fmtNum(n: number): string {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  LEADERBOARD EMBED — Clean Table Design
-//  Uses monospace code block for spreadsheet-like readability
-//  Fields for summary stats only
+//  LEADERBOARD EMBED — Full Width Design
+//  Each player gets their own field (full width) for max readability
 // ═══════════════════════════════════════════════════════════════
 
 function buildLeaderboardEmbed(players: any[], division: string) {
   const div = divConfig(division);
 
-  // Build monospace table in code block
-  const lines = players.map((p: any) => {
+  // Each player = full-width field
+  const fields: any[] = players.map((p: any) => {
     const rank = Number(p.rank);
     const medal = rankMedal(rank);
-    const tag = p.gamertag.length > 14 ? p.gamertag.slice(0, 13) + '…' : p.gamertag;
-    const pts = fmtNum(p.points).padStart(6);
-    const w = `${p.totalWins}W`.padStart(3);
-    const mvp = `${p.totalMvp}MVP`;
-    const streak = p.streak > 1 ? ` S${p.streak}` : '';
+    const wr = winRate(p.totalWins, p.matches);
+    const streakStr = p.streak > 1 ? ` · Streak ${p.streak}` : '';
+    const mvpStr = p.totalMvp > 0 ? ` · ${p.totalMvp} MVP` : '';
 
-    return ` ${medal}  ${tag.padEnd(15)} ${pts}  ${w}  ${mvp}${streak}`;
+    return {
+      name: `${medal}  **${p.gamertag}**`,
+      value: `**${fmtNum(p.points)}** pts · ${p.totalWins}W/${p.matches}M · ${wr} WR${mvpStr}${streakStr}`,
+      inline: false,
+    };
   });
 
-  const table = '```\n' + lines.join('\n') + '\n```';
-
-  // Summary fields
+  // Summary row
   const totalPts = players.reduce((s: number, p: any) => s + Number(p.points), 0);
   const avgPts = Math.round(totalPts / players.length);
   const topWins = players.reduce((s: number, p: any) => s + Number(p.totalWins), 0);
-  const topMvp = players.reduce((s: number, p: any) => s + Number(p.totalMvp), 0);
+
+  fields.push({
+    name: '\u200B',
+    value: `${players.length} players · Avg ${fmtNum(avgPts)} pts · ${topWins} total wins`,
+    inline: false,
+  });
 
   return new EmbedBuilder()
     .setColor(div.color)
@@ -367,12 +371,7 @@ function buildLeaderboardEmbed(players: any[], division: string) {
       name: `LEADERBOARD ${div.emoji} ${div.label.toUpperCase()}`,
       iconURL: BRAND.footerIcon,
     })
-    .setDescription(table)
-    .addFields(
-      { name: 'Players', value: `${players.length}`, inline: true },
-      { name: 'Avg Points', value: `${fmtNum(avgPts)}`, inline: true },
-      { name: 'Total Wins', value: `${topWins}`, inline: true },
-    )
+    .addFields(fields)
     .setFooter({ text: BRAND.footerText, iconURL: BRAND.footerIcon })
     .setTimestamp();
 }
