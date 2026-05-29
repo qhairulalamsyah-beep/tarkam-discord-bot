@@ -4,7 +4,7 @@
  *  Connected to Neon PostgreSQL (same DB as idolmeta.fun)
  *
  *  Features:
- *  - Slash commands: /leaderboard, /bracket, /skor, /profil, /jadwal, /stats
+ *  - Slash commands: /leaderboard, /bracket, /skor, /profil, /jadwal, /stats, /daftar
  *  - Auto-post match results when matches complete
  *  - Auto-update leaderboard messages
  *  - Reaction roles in #pilih-role
@@ -39,6 +39,7 @@ const APP_ID = process.env.APP_ID || '1488261162205184051';
 const GUILD_ID = process.env.GUILD_ID || '1510008183329132634';
 const DATABASE_URL = process.env.DATABASE_URL!;
 const PORT = parseInt(process.env.PORT || '3004', 10);
+const API_URL = process.env.API_URL || 'https://idolmeta.fun'; // Website API base URL
 
 if (!BOT_TOKEN || !DATABASE_URL) {
   console.error('❌ BOT_TOKEN and DATABASE_URL are required');
@@ -270,6 +271,17 @@ const COMMANDS = [
   new SlashCommandBuilder()
     .setName('stats')
     .setDescription('Statistik TARKAM'),
+
+  new SlashCommandBuilder()
+    .setName('daftar')
+    .setDescription('Daftar turnamen TARKAM')
+    .addStringOption(o => o.setName('gamertag').setDescription('Nickname / Gamertag kamu').setRequired(true))
+    .addStringOption(o => o.setName('divisi').setDescription('Pilih divisi').addChoices(
+      { name: '♂ Cowo', value: 'M' },
+      { name: '♀ Cewe', value: 'F' },
+    ).setRequired(true))
+    .addStringOption(o => o.setName('nama').setDescription('Nama asli kamu').setRequired(true))
+    .addStringOption(o => o.setName('kota').setDescription('Kota kamu (opsional)').setRequired(false)),
 ].map(cmd => cmd.toJSON());
 
 // ═══════════════════════════════════════════════════════════════
@@ -686,6 +698,55 @@ function buildMatchAnnouncementEmbed(newMatches: any[]) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+//  REGISTRATION EMBED — Premium Edition
+// ═══════════════════════════════════════════════════════════════
+
+function buildRegistrationSuccessEmbed(data: any) {
+  const divLabel = data.division === 'M' ? '♂ Cowo' : '♀ Cewe';
+  const divColor = data.division === 'M' ? C.male : C.female;
+  const tournamentInfo = data.tournament
+    ? `\n${U.leftBar} Turnamen: W${data.tournament.weekNumber} ${data.tournament.division === 'male' ? '♂' : '♀'}`
+    : '';
+
+  return new EmbedBuilder()
+    .setColor(C.success)
+    .setAuthor({
+      name: `${U.check}  PENDAFTARAN BERHASIL`,
+      iconURL: BRAND.footerIcon,
+    })
+    .setDescription(
+      `${U.divider}\n` +
+      `**${data.gamertag}** · ${divLabel}\n` +
+      `${U.leftBar} Nama: ${data.name}` +
+      (data.city ? `\n${U.leftBar} Kota: ${data.city}` : '') +
+      `${tournamentInfo}\n` +
+      `${U.divider}\n` +
+      `${U.pending} Status: **Menunggu Approval Admin**\n\n` +
+      `Kamu akan mendapat notifikasi setelah admin approve.\n` +
+      `Cek status di ${BRAND.url}`
+    )
+    .setFooter({ text: BRAND.footerText, iconURL: BRAND.footerIcon })
+    .setTimestamp();
+}
+
+function buildRegistrationErrorEmbed(errorMsg: string) {
+  return new EmbedBuilder()
+    .setColor(C.danger)
+    .setAuthor({
+      name: `${U.sparkle}  GAGAL DAFTAR`,
+      iconURL: BRAND.footerIcon,
+    })
+    .setDescription(
+      `${U.divider}\n` +
+      `${errorMsg}\n` +
+      `${U.divider}\n` +
+      `Hubungi admin jika ada masalah.`
+    )
+    .setFooter({ text: BRAND.footerText, iconURL: BRAND.footerIcon })
+    .setTimestamp();
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  SLASH COMMAND HANDLERS
 // ═══════════════════════════════════════════════════════════════
 
@@ -789,6 +850,68 @@ async function handleStats(interaction: ChatInputCommandInteraction) {
   } catch (err) {
     console.error(`  ❌ Stats error:`, err);
     await interaction.editReply('❌ Gagal mengambil stats. Coba lagi nanti.');
+  }
+}
+
+async function handleDaftar(interaction: ChatInputCommandInteraction) {
+  await interaction.deferReply({ flags: 64 }); // Ephemeral — only visible to the user
+
+  const gamertag = interaction.options.getString('gamertag')!;
+  const division = interaction.options.getString('divisi')!; // "M" or "F"
+  const name = interaction.options.getString('nama')!;
+  const city = interaction.options.getString('kota') || '';
+
+  const discordUserId = interaction.user.id;
+  const discordUsername = interaction.user.username;
+
+  console.log(`  📝 Registration attempt: ${gamertag} (${division}) by ${discordUsername}`);
+
+  try {
+    // Call the website API to create the registration
+    const response = await fetch(`${API_URL}/api/discord-registrations`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        discordUserId,
+        discordUsername,
+        gamertag,
+        name,
+        division,
+        city,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      const embed = buildRegistrationSuccessEmbed(result.data);
+      await interaction.editReply({ embeds: [embed] });
+      console.log(`  ✅ Registration created: ${gamertag} by ${discordUsername}`);
+
+      // Also notify in status-pendaftaran channel
+      const statusChannelId = CHANNEL_MAP['status-pendaftaran'];
+      const statusChannel = statusChannelId
+        ? client.channels.cache.get(statusChannelId) as TextChannel | undefined
+        : null;
+
+      if (statusChannel) {
+        const divLabel = division === 'M' ? '♂ Cowo' : '♀ Cewe';
+        await statusChannel.send(
+          `${U.pending} Pendaftaran baru dari Discord!\n` +
+          `**${gamertag}** · ${divLabel} · ${name}` +
+          (city ? ` · ${city}` : '') +
+          `\nMenunggu approval admin.`
+        );
+      }
+    } else {
+      const embed = buildRegistrationErrorEmbed(result.error || 'Terjadi kesalahan saat mendaftar.');
+      await interaction.editReply({ embeds: [embed] });
+      console.log(`  ❌ Registration failed: ${result.error}`);
+    }
+  } catch (err) {
+    console.error(`  ❌ Daftar error:`, err);
+    const embed = buildRegistrationErrorEmbed('Gagal menghubungi server. Coba lagi nanti.');
+    await interaction.editReply({ embeds: [embed] });
   }
 }
 
@@ -989,7 +1112,7 @@ client.once(Events.ClientReady, async () => {
   updateLeaderboardMessages().catch(console.error);
 
   console.log('✅ Bot fully initialized!');
-  console.log('📋 Commands: /leaderboard /bracket /skor /profil /jadwal /stats');
+  console.log('📋 Commands: /leaderboard /bracket /skor /profil /jadwal /stats /daftar');
 
   setInterval(checkNewMatchResults, 2 * 60 * 1000);
   console.log('⏰ Polling: match results (every 2 min)');
@@ -1011,6 +1134,7 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
       case 'profil': await handleProfil(interaction); break;
       case 'jadwal': await handleJadwal(interaction); break;
       case 'stats': await handleStats(interaction); break;
+      case 'daftar': await handleDaftar(interaction); break;
       default:
         await interaction.reply({ content: 'Command tidak dikenali.', flags: 64 });
     }
