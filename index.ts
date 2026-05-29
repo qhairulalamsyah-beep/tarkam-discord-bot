@@ -979,6 +979,39 @@ async function checkNewMatchResults() {
 //  AUTO-POST: Leaderboard Updates (every 30 min)
 // ═══════════════════════════════════════════════════════════════
 
+// Find existing leaderboard messages in channels (called once on startup)
+// This prevents posting duplicate messages every time the bot restarts
+async function findExistingLeaderboardMessages() {
+  try {
+    for (const division of ['male', 'female']) {
+      const channelName = division === 'male' ? 'leaderboard-cowo' : 'leaderboard-cewe';
+      const channelId = CHANNEL_MAP[channelName];
+      if (!channelId) continue;
+
+      const channel = client.channels.cache.get(channelId) as TextChannel | undefined;
+      if (!channel) continue;
+
+      // Search for the most recent leaderboard embed from this bot
+      const messages = await channel.messages.fetch({ limit: 10 });
+      const botMsg = messages.find(m =>
+        m.author.id === client.user?.id &&
+        m.embeds.length > 0 &&
+        m.embeds[0].author?.name?.includes('LEADERBOARD')
+      );
+
+      if (botMsg) {
+        leaderboardMessageIds[division] = botMsg.id;
+        console.log(`  📊 Found existing leaderboard message: ${division} (${botMsg.id})`);
+      } else {
+        console.log(`  📊 No existing leaderboard message found for: ${division}`);
+      }
+    }
+  } catch (err) {
+    console.error('❌ Error finding leaderboard messages:', err);
+  }
+}
+
+// Update leaderboard messages — only posts NEW messages if none exist
 async function updateLeaderboardMessages() {
   try {
     for (const division of ['male', 'female']) {
@@ -1002,13 +1035,29 @@ async function updateLeaderboardMessages() {
           console.log(`  📊 Updated leaderboard: ${division}`);
           continue;
         } catch {
-          // Message deleted, post new one
+          // Message was deleted, search for another one before creating new
         }
       }
 
-      const msg = await channel.send({ embeds: [embed] });
-      leaderboardMessageIds[division] = msg.id;
-      console.log(`  📊 Posted leaderboard: ${division}`);
+      // No tracked message — search for existing bot message in channel first
+      const messages = await channel.messages.fetch({ limit: 10 });
+      const botMsg = messages.find(m =>
+        m.author.id === client.user?.id &&
+        m.embeds.length > 0 &&
+        m.embeds[0].author?.name?.includes('LEADERBOARD')
+      );
+
+      if (botMsg) {
+        // Update the found message instead of creating a new one
+        await botMsg.edit({ embeds: [embed] });
+        leaderboardMessageIds[division] = botMsg.id;
+        console.log(`  📊 Reclaimed & updated leaderboard: ${division}`);
+      } else {
+        // Truly no message exists — only then post new
+        const msg = await channel.send({ embeds: [embed] });
+        leaderboardMessageIds[division] = msg.id;
+        console.log(`  📊 Posted new leaderboard: ${division}`);
+      }
     }
   } catch (err) {
     console.error('❌ Error updating leaderboard:', err);
@@ -1105,6 +1154,10 @@ client.once(Events.ClientReady, async () => {
   await registerCommands();
   setupReactionRoles().catch(console.error);
   getLatestCompletedMatch().then(m => { if (m) lastMatchResultId = m.id; }).catch(console.error);
+
+  // Find existing leaderboard messages silently (no new posts on restart)
+  await findExistingLeaderboardMessages();
+  // Then update them silently (edits existing messages, doesn't post new ones)
   updateLeaderboardMessages().catch(console.error);
 
   console.log('✅ Bot fully initialized!');
