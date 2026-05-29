@@ -87,6 +87,79 @@ const CHANNEL_MAP: Record<string, string> = {};
 // ═══ STATE ═══
 let lastMatchResultId: string | null = null;
 const leaderboardMessageIds: Record<string, string> = {}; // division -> messageId
+let matchPollTimer: ReturnType<typeof setInterval> | null = null;
+let leaderboardPollTimer: ReturnType<typeof setInterval> | null = null;
+
+// ═══════════════════════════════════════════════════════════════
+//  TOURNAMENT SCHEDULE — Neon DB optimization
+//  Only poll during tournament hours to save free tier quota
+//  Cowo: Wednesday 20:30–00:30 WIB
+//  Cewe: Thursday  20:30–00:30 WIB
+// ═══════════════════════════════════════════════════════════════
+
+function isTournamentHours(): boolean {
+  const now = new Date();
+  // WIB = UTC+7
+  const wib = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+  const day = wib.getUTCDay(); // 0=Sun, 3=Wed, 4=Thu
+  const hours = wib.getUTCHours();
+  const minutes = wib.getUTCMinutes();
+  const timeNum = hours * 100 + minutes; // e.g. 2030 = 20:30
+
+  // Wednesday (3): 20:30 – 23:59
+  if (day === 3 && timeNum >= 2030) return true;
+  // Thursday (4): 00:00 – 00:30 AND 20:30 – 23:59
+  if (day === 4 && timeNum <= 30) return true;
+  if (day === 4 && timeNum >= 2030) return true;
+  // Friday (5): 00:00 – 00:30 (overflow from Thursday night)
+  if (day === 5 && timeNum <= 30) return true;
+
+  return false;
+}
+
+function getTournamentDayLabel(): string {
+  const now = new Date();
+  const wib = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+  const day = wib.getUTCDay();
+  if (day === 3) return 'Rabu (Cowo)';
+  if (day === 4) return 'Kamis (Cewe)';
+  return '';
+}
+
+function startPolling() {
+  if (matchPollTimer) return; // already running
+
+  console.log('🔴 Tournament hours started — polling ON');
+  console.log(`   Day: ${getTournamentDayLabel()}`);
+
+  // Match results: every 2 min
+  matchPollTimer = setInterval(checkNewMatchResults, 2 * 60 * 1000);
+  checkNewMatchResults().catch(console.error); // immediate first check
+
+  // Leaderboard: every 30 min
+  leaderboardPollTimer = setInterval(updateLeaderboardMessages, 30 * 60 * 1000);
+  updateLeaderboardMessages().catch(console.error); // immediate first check
+}
+
+function stopPolling() {
+  if (!matchPollTimer) return; // already stopped
+
+  console.log('⚪ Tournament hours ended — polling OFF (saving DB quota)');
+
+  clearInterval(matchPollTimer);
+  clearInterval(leaderboardPollTimer);
+  matchPollTimer = null;
+  leaderboardPollTimer = null;
+}
+
+// Check every 1 minute if we should start/stop polling
+function scheduleCheck() {
+  if (isTournamentHours()) {
+    startPolling();
+  } else {
+    stopPolling();
+  }
+}
 
 // ═══════════════════════════════════════════════════════════════
 //  DATABASE QUERIES (matching actual Prisma schema)
@@ -1157,17 +1230,21 @@ client.once(Events.ClientReady, async () => {
 
   // Find existing leaderboard messages silently (no new posts on restart)
   await findExistingLeaderboardMessages();
-  // Then update them silently (edits existing messages, doesn't post new ones)
-  updateLeaderboardMessages().catch(console.error);
+
+  // Schedule system: only poll during tournament hours (save Neon free tier!)
+  // Tournament: Rabu 20:30-00:30 WIB (Cowo), Kamis 20:30-00:30 WIB (Cewe)
+  const currentlyInHours = isTournamentHours();
+  if (currentlyInHours) {
+    startPolling(); // If bot restarts during tournament, start immediately
+  }
+
+  // Check schedule every 1 minute to start/stop polling
+  setInterval(scheduleCheck, 60 * 1000);
 
   console.log('✅ Bot fully initialized!');
-  console.log('📋 Commands: /leaderboard /bracket /skor /profil /jadwal /stats /daftar');
-
-  setInterval(checkNewMatchResults, 2 * 60 * 1000);
-  console.log('⏰ Polling: match results (every 2 min)');
-
-  setInterval(updateLeaderboardMessages, 30 * 60 * 1000);
-  console.log('⏰ Polling: leaderboard update (every 30 min)');
+  console.log(`📋 Commands: /leaderboard /bracket /skor /profil /jadwal /stats /daftar`);
+  console.log(`⏰ Schedule: Polling ON only Rabu & Kamis 20:30-00:30 WIB`);
+  console.log(`   Current: ${currentlyInHours ? '🔴 Tournament hours — polling ACTIVE' : '⚪ Off-hours — polling OFF (saving DB quota)'}`);
 });
 
 client.on(Events.InteractionCreate, async (interaction: Interaction) => {
@@ -1258,6 +1335,11 @@ client.on(Events.MessageReactionRemove, async (reaction: MessageReaction, user: 
 // ═══ SIMPLE HEALTH CHECK SERVER ═══
 import http from 'http';
 const server = http.createServer((req: any, res: any) => {
+  const inHours = isTournamentHours();
+  const now = new Date();
+  const wib = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+  const wibStr = wib.toISOString().replace('T', ' ').slice(0, 19);
+
   res.writeHead(200, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify({
     status: 'ok',
@@ -1265,6 +1347,12 @@ const server = http.createServer((req: any, res: any) => {
     guild: GUILD_ID,
     channels: Object.keys(CHANNEL_MAP).length,
     uptime: process.uptime(),
+    schedule: {
+      wibTime: wibStr,
+      isTournamentHours: inHours,
+      pollingActive: matchPollTimer !== null,
+      nextPollWindow: inHours ? 'NOW' : (wib.getUTCDay() === 3 ? 'Tonight 20:30' : wib.getUTCDay() === 4 ? 'Tonight 20:30' : 'Rabu/Kamis 20:30 WIB'),
+    },
   }));
 });
 server.listen(PORT, () => {
