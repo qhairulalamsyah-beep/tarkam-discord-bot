@@ -275,12 +275,12 @@ const COMMANDS = [
   new SlashCommandBuilder()
     .setName('daftar')
     .setDescription('Daftar turnamen TARKAM')
-    .addStringOption(o => o.setName('gamertag').setDescription('Nickname / Gamertag kamu').setRequired(true))
+    .addStringOption(o => o.setName('nickname').setDescription('Nickname kamu').setRequired(true))
     .addStringOption(o => o.setName('divisi').setDescription('Pilih divisi').addChoices(
       { name: '♂ Cowo', value: 'M' },
       { name: '♀ Cewe', value: 'F' },
     ).setRequired(true))
-    .addStringOption(o => o.setName('nama').setDescription('Nama asli kamu').setRequired(true))
+    .addStringOption(o => o.setName('whatsapp').setDescription('No WhatsApp (contoh: 08123456789)').setRequired(true))
     .addStringOption(o => o.setName('kota').setDescription('Kota kamu (opsional)').setRequired(false)),
 ].map(cmd => cmd.toJSON());
 
@@ -705,23 +705,21 @@ function buildRegistrationSuccessEmbed(data: any) {
   const divLabel = data.division === 'M' ? '♂ Cowo' : '♀ Cewe';
   const divColor = data.division === 'M' ? C.male : C.female;
   const tournamentInfo = data.tournament
-    ? `\n${U.leftBar} Turnamen: W${data.tournament.weekNumber} ${data.tournament.division === 'male' ? '♂' : '♀'}`
+    ? `\n▸ Turnamen: W${data.tournament.weekNumber} ${data.tournament.division === 'male' ? '♂' : '♀'}`
     : '';
 
   return new EmbedBuilder()
     .setColor(C.success)
     .setAuthor({
-      name: `${U.check}  PENDAFTARAN BERHASIL`,
+      name: '✅  PENDAFTARAN BERHASIL',
       iconURL: BRAND.footerIcon,
     })
     .setDescription(
-      `${U.divider}\n` +
       `**${data.gamertag}** · ${divLabel}\n` +
-      `${U.leftBar} Nama: ${data.name}` +
-      (data.city ? `\n${U.leftBar} Kota: ${data.city}` : '') +
-      `${tournamentInfo}\n` +
-      `${U.divider}\n` +
-      `${U.pending} Status: **Menunggu Approval Admin**\n\n` +
+      `▸ WhatsApp: ${data.whatsapp || '-'}\n` +
+      (data.city ? `▸ Kota: ${data.city}\n` : '') +
+      `${tournamentInfo}\n\n` +
+      `⏳ Status: **Menunggu Approval Admin**\n\n` +
       `Kamu akan mendapat notifikasi setelah admin approve.\n` +
       `Cek status di ${BRAND.url}`
     )
@@ -733,13 +731,11 @@ function buildRegistrationErrorEmbed(errorMsg: string) {
   return new EmbedBuilder()
     .setColor(C.danger)
     .setAuthor({
-      name: `${U.sparkle}  GAGAL DAFTAR`,
+      name: '❌  GAGAL DAFTAR',
       iconURL: BRAND.footerIcon,
     })
     .setDescription(
-      `${U.divider}\n` +
-      `${errorMsg}\n` +
-      `${U.divider}\n` +
+      `${errorMsg}\n\n` +
       `Hubungi admin jika ada masalah.`
     )
     .setFooter({ text: BRAND.footerText, iconURL: BRAND.footerIcon })
@@ -856,15 +852,15 @@ async function handleStats(interaction: ChatInputCommandInteraction) {
 async function handleDaftar(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply({ flags: 64 }); // Ephemeral — only visible to the user
 
-  const gamertag = interaction.options.getString('gamertag')!;
+  const nickname = interaction.options.getString('nickname')!;
   const division = interaction.options.getString('divisi')!; // "M" or "F"
-  const name = interaction.options.getString('nama')!;
+  const whatsapp = interaction.options.getString('whatsapp')!;
   const city = interaction.options.getString('kota') || '';
 
   const discordUserId = interaction.user.id;
   const discordUsername = interaction.user.username;
 
-  console.log(`  📝 Registration attempt: ${gamertag} (${division}) by ${discordUsername}`);
+  console.log(`  📝 Registration attempt: ${nickname} (${division}) WA:${whatsapp} by ${discordUsername}`);
 
   try {
     // Call the website API to create the registration
@@ -874,9 +870,9 @@ async function handleDaftar(interaction: ChatInputCommandInteraction) {
       body: JSON.stringify({
         discordUserId,
         discordUsername,
-        gamertag,
-        name,
+        gamertag: nickname,
         division,
+        whatsapp,
         city,
       }),
     });
@@ -886,7 +882,7 @@ async function handleDaftar(interaction: ChatInputCommandInteraction) {
     if (result.success) {
       const embed = buildRegistrationSuccessEmbed(result.data);
       await interaction.editReply({ embeds: [embed] });
-      console.log(`  ✅ Registration created: ${gamertag} by ${discordUsername}`);
+      console.log(`  ✅ Registration created: ${nickname} by ${discordUsername}`);
 
       // Also notify in status-pendaftaran channel
       const statusChannelId = CHANNEL_MAP['status-pendaftaran'];
@@ -897,8 +893,8 @@ async function handleDaftar(interaction: ChatInputCommandInteraction) {
       if (statusChannel) {
         const divLabel = division === 'M' ? '♂ Cowo' : '♀ Cewe';
         await statusChannel.send(
-          `${U.pending} Pendaftaran baru dari Discord!\n` +
-          `**${gamertag}** · ${divLabel} · ${name}` +
+          `⏳ Pendaftaran baru dari Discord!\n` +
+          `**${nickname}** · ${divLabel} · WA: ${whatsapp}` +
           (city ? ` · ${city}` : '') +
           `\nMenunggu approval admin.`
         );
