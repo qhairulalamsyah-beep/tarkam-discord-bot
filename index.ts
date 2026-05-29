@@ -76,8 +76,8 @@ const BRAND = {
   tagline: 'Idol Meta · Fan Made Edition',
   url: 'idolmeta.fun',
   footerIcon: 'https://idolmeta.fun/logo1.webp',
-  get footerText() { return `✦ ${this.name} — ${this.url}`; },
-  get footerTextFull() { return `✦ ${this.name} · ${this.tagline} — ${this.url}`; },
+  get footerText() { return `${this.name} — ${this.url}`; },
+  get footerTextFull() { return `${this.name} · ${this.tagline} — ${this.url}`; },
 };
 
 // ═══ CHANNEL MAP ═══ (will be resolved on ready)
@@ -315,9 +315,9 @@ function rankMedal(rank: number): string {
 // Tier badge
 function tierBadge(tier: string): string {
   const t = tier?.toUpperCase();
-  if (t === 'S') return '🌟 S-Tier';
-  if (t === 'A') return '⭐ A-Tier';
-  return '✦ B-Tier';
+  if (t === 'S') return 'S-Tier';
+  if (t === 'A') return 'A-Tier';
+  return 'B-Tier';
 }
 
 // Win rate
@@ -347,8 +347,8 @@ function buildLeaderboardEmbed(players: any[], division: string) {
     const tag = p.gamertag.length > 14 ? p.gamertag.slice(0, 13) + '…' : p.gamertag;
     const pts = fmtNum(p.points).padStart(6);
     const w = `${p.totalWins}W`.padStart(3);
-    const mvp = `${p.totalMvp}💎`;
-    const streak = p.streak > 1 ? ` 🔥${p.streak}` : '';
+    const mvp = `${p.totalMvp}MVP`;
+    const streak = p.streak > 1 ? ` S${p.streak}` : '';
 
     return ` ${medal}  ${tag.padEnd(15)} ${pts}  ${w}  ${mvp}${streak}`;
   });
@@ -364,14 +364,14 @@ function buildLeaderboardEmbed(players: any[], division: string) {
   return new EmbedBuilder()
     .setColor(div.color)
     .setAuthor({
-      name: `🏆 LEADERBOARD ${div.emoji} ${div.label.toUpperCase()}`,
+      name: `LEADERBOARD ${div.emoji} ${div.label.toUpperCase()}`,
       iconURL: BRAND.footerIcon,
     })
     .setDescription(table)
     .addFields(
-      { name: '👥 Players', value: `${players.length}`, inline: true },
-      { name: '⚡ Avg Points', value: `${fmtNum(avgPts)}`, inline: true },
-      { name: '⚔️ Total Wins', value: `${topWins}`, inline: true },
+      { name: 'Players', value: `${players.length}`, inline: true },
+      { name: 'Avg Points', value: `${fmtNum(avgPts)}`, inline: true },
+      { name: 'Total Wins', value: `${topWins}`, inline: true },
     )
     .setFooter({ text: BRAND.footerText, iconURL: BRAND.footerIcon })
     .setTimestamp();
@@ -397,25 +397,25 @@ function buildMatchResultEmbed(match: any) {
   const roundName = roundNames[match.round] || `Round ${match.round}`;
   const bracketLabel = match.bracket === 'winners' ? "Winner's Bracket" : match.bracket === 'losers' ? "Loser's Bracket" : '';
 
-  const t1Display = isT1Winner ? `🏆 ${match.team1_name}` : match.team1_name;
-  const t2Display = isT2Winner ? `🏆 ${match.team2_name}` : match.team2_name;
+  const t1Display = isT1Winner ? `**${match.team1_name}**` : match.team1_name;
+  const t2Display = isT2Winner ? `**${match.team2_name}**` : match.team2_name;
   const scoreDisplay = `**${s1} — ${s2}**`;
 
   const fields: any[] = [
-    { name: t1Display, value: `\`${'■'.repeat(s1)}${'□'.repeat(Math.max(0, (match.format === 'BO1' ? 1 : 3) - s1))}\``, inline: true },
+    { name: 'Team 1', value: t1Display, inline: true },
     { name: 'Score', value: scoreDisplay, inline: true },
-    { name: t2Display, value: `\`${'■'.repeat(s2)}${'□'.repeat(Math.max(0, (match.format === 'BO1' ? 1 : 3) - s2))}\``, inline: true },
+    { name: 'Team 2', value: t2Display, inline: true },
   ];
 
   // Result line in description
   const context = `${roundName}${bracketLabel ? ` · ${bracketLabel}` : ''} · ${match.format}`;
-  const resultLine = `🏆 **${winner}** maju ke ronde selanjutnya!${isSweep ? ' _(Sweep!)_' : ''}`;
-  const mvpLine = match.mvp_tag ? `\n💎 MVP: **${match.mvp_tag}**` : '';
+  const resultLine = `Winner: **${winner}**${isSweep ? ' _(Sweep!)_' : ''}`;
+  const mvpLine = match.mvp_tag ? `\nMVP: **${match.mvp_tag}**` : '';
 
   return new EmbedBuilder()
     .setColor(div.color)
     .setAuthor({
-      name: `⚔️ MATCH RESULT — W${match.weekNumber} ${div.emoji} ${div.label.toUpperCase()}`,
+      name: `MATCH RESULT — W${match.weekNumber} ${div.emoji} ${div.label.toUpperCase()}`,
       iconURL: BRAND.footerIcon,
     })
     .setDescription(`${context}\n${resultLine}${mvpLine}`)
@@ -434,7 +434,7 @@ function buildProfileEmbed(player: any) {
   const wr = winRate(player.totalWins, player.matches);
 
   const descParts: string[] = [
-    tierBadge(player.tier) + ` · ${div.emoji} ${div.label}` + (player.city ? ` · 📍 ${player.city}` : ''),
+    tierBadge(player.tier) + ` · ${div.emoji} ${div.label}` + (player.city ? ` · ${player.city}` : ''),
     player.name,
   ];
 
@@ -447,16 +447,16 @@ function buildProfileEmbed(player: any) {
     .setDescription(descParts.join('\n'))
     .addFields(
       // Row 1: Points & Win Rate
-      { name: '⭐ Points', value: `**${fmtNum(player.points)}**`, inline: true },
-      { name: '📈 Win Rate', value: `**${wr}**`, inline: true },
+      { name: 'Points', value: `**${fmtNum(player.points)}**`, inline: true },
+      { name: 'Win Rate', value: `**${wr}**`, inline: true },
       { name: '\u200B', value: '\u200B', inline: true }, // spacer for 3-col alignment
       // Row 2: Wins & Matches
-      { name: '🏆 Wins', value: `**${player.totalWins}**`, inline: true },
-      { name: '⚔️ Matches', value: `**${player.matches}**`, inline: true },
+      { name: 'Wins', value: `**${player.totalWins}**`, inline: true },
+      { name: 'Matches', value: `**${player.matches}**`, inline: true },
       { name: '\u200B', value: '\u200B', inline: true },
       // Row 3: MVP & Streak
-      { name: '💎 MVP', value: `**${player.totalMvp}**`, inline: true },
-      { name: '🔥 Streak', value: `**${player.streak}** (max ${player.maxStreak})`, inline: true },
+      { name: 'MVP', value: `**${player.totalMvp}**`, inline: true },
+      { name: 'Streak', value: `**${player.streak}** (max ${player.maxStreak})`, inline: true },
       { name: '\u200B', value: '\u200B', inline: true },
     )
     .setFooter({ text: BRAND.footerTextFull, iconURL: BRAND.footerIcon })
@@ -474,11 +474,11 @@ function buildBracketEmbed(data: any) {
   const matches = data.matches;
 
   const roundNames: Record<number, string> = {
-    1: '🏁 Grand Final',
-    2: '⚡ Semi Final',
-    3: '🔸 Quarter Final',
-    4: '🔹 Round of 16',
-    5: '◾ Round of 32',
+    1: 'Grand Final',
+    2: 'Semi Final',
+    3: 'Quarter Final',
+    4: 'Round of 16',
+    5: 'Round of 32',
   };
 
   // Group by round
@@ -506,17 +506,17 @@ function buildBracketEmbed(data: any) {
         const isT2Win = typeof s1 === 'number' && typeof s2 === 'number' && s2 > s1;
         const t1 = isT1Win ? `**${m.team1_name}**` : m.team1_name;
         const t2 = isT2Win ? `**${m.team2_name}**` : m.team2_name;
-        const mvpStr = m.mvp_tag ? `  💎 ${m.mvp_tag}` : '';
-        return `✅ ${t1}  **${s1} — ${s2}**  ${t2}${mvpStr}`;
+        const mvpStr = m.mvp_tag ? `  MVP: ${m.mvp_tag}` : '';
+        return `${t1}  **${s1} — ${s2}**  ${t2}${mvpStr}`;
       }
 
       // Live match
       if (m.status === 'live') {
-        return `🔴 ${m.team1_name}  vs  ${m.team2_name}`;
+        return `LIVE: ${m.team1_name}  vs  ${m.team2_name}`;
       }
 
       // Pending match
-      return `⏳ ${m.team1_name}  vs  ${m.team2_name}`;
+      return `${m.team1_name}  vs  ${m.team2_name}`;
     });
 
     fields.push({
@@ -529,7 +529,7 @@ function buildBracketEmbed(data: any) {
   // If no matches
   if (fields.length === 0) {
     fields.push({
-      name: '📋 Bracket',
+      name: 'Bracket',
       value: 'Bracket belum tersedia untuk week ini',
       inline: false,
     });
@@ -541,13 +541,13 @@ function buildBracketEmbed(data: any) {
   const pendingCount = matches.length - completedCount - liveCount;
 
   const statusParts: string[] = [];
-  if (completedCount > 0) statusParts.push(`✅ ${completedCount} selesai`);
-  if (liveCount > 0) statusParts.push(`🔴 ${liveCount} live`);
-  if (pendingCount > 0) statusParts.push(`⏳ ${pendingCount} menunggu`);
+  if (completedCount > 0) statusParts.push(`${completedCount} selesai`);
+  if (liveCount > 0) statusParts.push(`${liveCount} live`);
+  if (pendingCount > 0) statusParts.push(`${pendingCount} menunggu`);
 
   const statusLine = statusParts.join(' · ') || 'Belum ada match';
   fields.push({
-    name: '📊 Status',
+    name: 'Status',
     value: `${statusLine} · ${matches.length} match total`,
     inline: false,
   });
@@ -555,7 +555,7 @@ function buildBracketEmbed(data: any) {
   return new EmbedBuilder()
     .setColor(div.color)
     .setAuthor({
-      name: `⚔️ BRACKET W${t.weekNumber} ${div.emoji} ${div.label.toUpperCase()}`,
+      name: `BRACKET W${t.weekNumber} ${div.emoji} ${div.label.toUpperCase()}`,
       iconURL: BRAND.footerIcon,
     })
     .addFields(fields)
@@ -570,28 +570,28 @@ function buildBracketEmbed(data: any) {
 
 function buildJadwalEmbed(tournaments: any[], week?: number) {
   const statusMap: Record<string, string> = {
-    'setup': '⚙️ Setup',
-    'registration': '🟢 Pendaftaran Dibuka!',
-    'approval': '🔄 Approval Peserta',
-    'team_generation': '🔀 Generate Tim',
-    'bracket_generation': '🏁 Generate Bracket',
-    'main_event': '🔴 LIVE',
-    'finalization': '📋 Finalisasi',
-    'completed': '✅ Selesai',
+    'setup': 'Setup',
+    'registration': 'Pendaftaran Dibuka!',
+    'approval': 'Approval Peserta',
+    'team_generation': 'Generate Tim',
+    'bracket_generation': 'Generate Bracket',
+    'main_event': 'LIVE',
+    'finalization': 'Finalisasi',
+    'completed': 'Selesai',
   };
 
   const fields: any[] = [];
 
   for (const t of tournaments) {
     const div = divConfig(t.division);
-    const status = statusMap[t.status] || `❓ ${t.status}`;
-    const prizeStr = t.prizePool ? `\n💰 Rp ${fmtNum(t.prizePool)}` : '';
+    const status = statusMap[t.status] || t.status;
+    const prizeStr = t.prizePool ? `\nRp ${fmtNum(t.prizePool)}` : '';
     const isLive = t.status === 'main_event' || t.status === 'finalization';
     const isRegOpen = t.status === 'registration' || t.status === 'approval';
-    const icon = isLive ? '🔴' : isRegOpen ? '🟢' : '';
+    const prefix = isLive ? '[LIVE] ' : isRegOpen ? '[OPEN] ' : '';
 
     fields.push({
-      name: `${icon} W${t.weekNumber} ${div.emoji} ${div.label}`,
+      name: `${prefix}W${t.weekNumber} ${div.emoji} ${div.label}`,
       value: `${status}${prizeStr}`,
       inline: true,
     });
@@ -599,13 +599,13 @@ function buildJadwalEmbed(tournaments: any[], week?: number) {
 
   if (fields.length === 0) {
     fields.push({
-      name: '📋 Jadwal',
+      name: 'Jadwal',
       value: 'Belum ada turnamen aktif',
       inline: false,
     });
   }
 
-  const title = week ? `📅 JADWAL — W${week}` : '📅 JADWAL TURNAMEN';
+  const title = week ? `JADWAL — W${week}` : 'JADWAL TURNAMEN';
 
   return new EmbedBuilder()
     .setColor(C.gold)
@@ -627,14 +627,14 @@ function buildStatsEmbed(stats: any) {
   return new EmbedBuilder()
     .setColor(C.gold)
     .setAuthor({
-      name: '📊 TARKAM STATISTIK',
+      name: 'TARKAM STATISTIK',
       iconURL: BRAND.footerIcon,
     })
     .addFields(
-      { name: '👥 Players', value: `**${fmtNum(stats.totalPlayers)}**`, inline: true },
-      { name: '⚔️ Matches', value: `**${fmtNum(stats.totalMatches)}**`, inline: true },
-      { name: '🏆 Season', value: `**${stats.activeSeason}**`, inline: true },
-      { name: '🏅 Tournaments', value: `**${stats.activeTournaments}** aktif`, inline: true },
+      { name: 'Players', value: `**${fmtNum(stats.totalPlayers)}**`, inline: true },
+      { name: 'Matches', value: `**${fmtNum(stats.totalMatches)}**`, inline: true },
+      { name: 'Season', value: `**${stats.activeSeason}**`, inline: true },
+      { name: 'Tournaments', value: `**${stats.activeTournaments}** aktif`, inline: true },
     )
     .setFooter({ text: `${BRAND.footerTextFull} · Real-time data`, iconURL: BRAND.footerIcon })
     .setTimestamp();
@@ -648,7 +648,7 @@ function buildReactionRolesEmbed() {
   return new EmbedBuilder()
     .setColor(C.gold)
     .setAuthor({
-      name: '🎭 PILIH ROLE KAMU',
+      name: 'PILIH ROLE KAMU',
       iconURL: BRAND.footerIcon,
     })
     .setDescription(
@@ -672,13 +672,13 @@ function buildMatchAnnouncementEmbed(newMatches: any[]) {
     const s1 = m.score1 ?? 0;
     const s2 = m.score2 ?? 0;
     const winner = s1 > s2 ? m.team1_name : m.team2_name;
-    return `✅ **${m.team1_name}** \`${s1} — ${s2}\` **${m.team2_name}** → **${winner}**`;
+    return `**${m.team1_name}** \`${s1} — ${s2}\` **${m.team2_name}** → **${winner}**`;
   });
 
   return new EmbedBuilder()
     .setColor(C.gold)
     .setAuthor({
-      name: `⚡ ${newMatches.length} MATCH BARU! — W${newMatches[0].weekNumber} ${div.emoji} ${div.label.toUpperCase()}`,
+      name: `${newMatches.length} MATCH BARU — W${newMatches[0].weekNumber} ${div.emoji} ${div.label.toUpperCase()}`,
       iconURL: BRAND.footerIcon,
     })
     .setDescription(matchLines.join('\n'))
