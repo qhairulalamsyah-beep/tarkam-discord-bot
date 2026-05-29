@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════════
- *  TARKAM Discord Bot — Auto Tournament Updates
+ *  TARKAM Discord Bot — Premium Edition ✦
  *  Connected to Neon PostgreSQL (same DB as idolmeta.fun)
  *
  *  Features:
@@ -8,7 +8,12 @@
  *  - Auto-post match results when matches complete
  *  - Auto-update leaderboard messages
  *  - Reaction roles in #pilih-role
- * ═══════════════════════════════════════════════════════════════════
+ *
+ *  Design: Premium, Elegant, Aesthetic
+ *  - Rich Unicode box-drawing characters for visual hierarchy
+ *  - Cohesive gold/blue/pink color palette matching idolmeta.fun
+ *  - Proper embed structure with author, thumbnails, dividers
+ *  ═══════════════════════════════════════════════════════════════════
  */
 
 import {
@@ -53,16 +58,68 @@ async function queryWithTimeout<T>(promise: Promise<T>, timeoutMs = 10000): Prom
   ]);
 }
 
-// ═══ COLORS ═══
+// ═══ PREMIUM COLOR PALETTE ═══
 const C = {
-  gold: '#EFF923',
-  male: '#2E9FFF',
-  female: '#FF2D78',
-  success: '#22C55E',
-  info: '#5865F2',
-  warning: '#F59E0B',
-  danger: '#EF4444',
-  neutral: '#99AAB5',
+  gold: '#F5C518',        // IMDb-style gold — premium & elegant
+  goldWarm: '#EFF923',    // Warm gold for highlights
+  goldDark: '#D4A017',    // Deep antique gold
+  male: '#4A9EFF',        // Refined blue (softer than pure cyan)
+  maleDark: '#2E6BC6',    // Deep blue
+  female: '#FF4D8E',      // Refined pink (softer than hot pink)
+  femaleDark: '#D6336C',  // Deep rose
+  success: '#2ECC71',     // Emerald green
+  info: '#5865F2',        // Discord blurple
+  warning: '#F1C40F',     // Warm yellow
+  danger: '#E74C3C',      // Rich red
+  neutral: '#95A5A6',     // Muted gray
+  dark: '#1A1A2E',        // Deep navy
+  midnight: '#16213E',    // Midnight blue
+};
+
+// ═══ PREMIUM UNICODE CHARACTERS ═══
+const U = {
+  // Dividers & Lines
+  divider: '━━━━━━━━━━━━━━━━━━━━━━',
+  dividerThin: '╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌',
+  dividerDot: '· · · · · · · · · · · · · · ·',
+  leftBar: '▎',
+  diamond: '◆',
+  bullet: '●',
+  arrow: '→',
+  arrowRight: '➜',
+  star: '★',
+  emptyStar: '☆',
+  crown: '👑',
+  trophy: '🏆',
+  fire: '🔥',
+  gem: '💎',
+  music: '🎵',
+  sword: '⚔️',
+  shield: '🛡️',
+  medal: '🏅',
+  check: '✅',
+  live: '🔴',
+  pending: '⏳',
+  lock: '🔒',
+  sparkles: '✨',
+  sparkle: '✦',
+  // Box drawing
+  tl: '╭', tr: '╮', bl: '╰', br: '╯',
+  h: '─', v: '│',
+  // Ranking
+  rank1: '🥇',
+  rank2: '🥈',
+  rank3: '🥉',
+};
+
+// ═══ BRANDING ═══
+const BRAND = {
+  name: 'TARKAM',
+  tagline: 'Idol Meta · Fan Made Edition',
+  url: 'idolmeta.fun',
+  footerIcon: 'https://idolmeta.fun/logo1.webp',
+  get footerText() { return `${U.sparkle} ${this.name} — ${this.url}`; },
+  get footerTextFull() { return `${U.sparkle} ${this.name} · ${this.tagline} — ${this.url}`; },
 };
 
 // ═══ CHANNEL MAP ═══ (will be resolved on ready)
@@ -160,7 +217,6 @@ async function getBracket(division: string, weekNumber?: number) {
     ORDER BY m.round DESC, m."matchNumber"
   `;
 
-  // Also get team members for context
   const teams = await sql`
     SELECT tp."teamId", tp.tier, p.gamertag, p.tier as player_tier
     FROM "TeamPlayer" tp
@@ -276,40 +332,107 @@ async function registerCommands() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  EMBED BUILDERS
+//  PREMIUM EMBED BUILDERS ✦
+// ═══════════════════════════════════════════════════════════════
+
+// Helper: Division config
+function divConfig(division: string) {
+  const isMale = division === 'male';
+  return {
+    isMale,
+    emoji: isMale ? '♂' : '♀',
+    label: isMale ? 'Cowo' : 'Cewe',
+    color: isMale ? C.male : C.female,
+    colorDark: isMale ? C.maleDark : C.femaleDark,
+    icon: isMale ? U.music : U.shield,
+  };
+}
+
+// Helper: Rank medal
+function rankMedal(rank: number): string {
+  if (rank === 1) return U.rank1;
+  if (rank === 2) return U.rank2;
+  if (rank === 3) return U.rank3;
+  return `\`${String(rank).padStart(2, ' ')}\``;
+}
+
+// Helper: Tier badge
+function tierBadge(tier: string): string {
+  const t = tier?.toUpperCase();
+  if (t === 'S') return '🌟 S-Tier';
+  if (t === 'A') return '⭐ A-Tier';
+  return '✦ B-Tier';
+}
+
+// Helper: Win rate
+function winRate(wins: number, matches: number): string {
+  if (matches === 0) return '0%';
+  return `${Math.round((wins / matches) * 100)}%`;
+}
+
+// Helper: Format number with dots (Indonesian style)
+function fmtNum(n: number): string {
+  return n.toLocaleString('id-ID');
+}
+
+// Helper: Progress bar
+function progressBar(value: number, max: number, length = 10): string {
+  const filled = Math.round((value / max) * length);
+  const empty = length - filled;
+  return '█'.repeat(Math.max(0, filled)) + '░'.repeat(Math.max(0, empty));
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  LEADERBOARD EMBED — Premium Edition
 // ═══════════════════════════════════════════════════════════════
 
 function buildLeaderboardEmbed(players: any[], division: string) {
-  const isMale = division === 'male';
-  const emoji = isMale ? '♂' : '♀';
-  const label = isMale ? 'Cowo' : 'Cewe';
-  const color = isMale ? C.male : C.female;
+  const div = divConfig(division);
 
-  const fields = players.map((p: any) => {
+  const description = players.map((p: any, i: number) => {
     const rank = Number(p.rank);
-    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
-    return {
-      name: `${medal} ${p.gamertag}`,
-      value: `${p.points} pts · ${p.totalWins}W · ${p.totalMvp} MVP${p.streak > 1 ? ` · 🔥${p.streak}` : ''}`,
-      inline: true,
-    };
-  });
+    const medal = rankMedal(rank);
+    const streakStr = p.streak > 1 ? ` ${U.fire}${p.streak}` : '';
+    const wr = winRate(p.totalWins, p.matches);
+    const ptsBar = progressBar(p.points, Math.max(...players.map((x: any) => x.points)), 8);
+
+    // Top 3 get special formatting
+    if (rank <= 3) {
+      return (
+        `${medal}  **${p.gamertag}**${streakStr}\n` +
+        `${U.leftBar} ${ptsBar}  **${fmtNum(p.points)}** pts · ${wr} WR\n` +
+        `${U.leftBar} ${p.totalWins}W / ${p.matches}M · ${U.gem} ${p.totalMvp} MVP`
+      );
+    }
+
+    return (
+      `${medal}  **${p.gamertag}**${streakStr}\n` +
+      `${U.leftBar} **${fmtNum(p.points)}** pts · ${wr} · ${p.totalWins}W · ${U.gem}${p.totalMvp}`
+    );
+  }).join(`\n${U.dividerDot}\n`);
 
   return new EmbedBuilder()
-    .setColor(color)
-    .setTitle(`🏆 Leaderboard ${emoji} ${label}`)
-    .setDescription(`Top ${players.length} peringkat divisi ${label}`)
-    .addFields(fields)
-    .setFooter({ text: 'TARKAM — idolmeta.fun' })
+    .setColor(div.color)
+    .setAuthor({
+      name: `${U.trophy}  LEADERBOARD ${div.emoji} ${div.label.toUpperCase()}`,
+      iconURL: BRAND.footerIcon,
+    })
+    .setDescription(
+      `${U.divider}\n` +
+      description +
+      `\n${U.divider}\n` +
+      `${U.sparkles} Top ${players.length} divisi ${div.label} season ini`
+    )
+    .setFooter({ text: BRAND.footerText, iconURL: BRAND.footerIcon })
     .setTimestamp();
 }
 
-function buildMatchResultEmbed(match: any) {
-  const isMale = match.division === 'male';
-  const color = isMale ? C.male : C.female;
-  const divEmoji = isMale ? '♂' : '♀';
-  const divLabel = isMale ? 'Cowo' : 'Cewe';
+// ═══════════════════════════════════════════════════════════════
+//  MATCH RESULT EMBED — Premium Edition
+// ═══════════════════════════════════════════════════════════════
 
+function buildMatchResultEmbed(match: any) {
+  const div = divConfig(match.division);
   const s1 = match.score1 ?? 0;
   const s2 = match.score2 ?? 0;
   const winner = s1 > s2 ? match.team1_name : match.team2_name;
@@ -317,47 +440,84 @@ function buildMatchResultEmbed(match: any) {
     ? (s1 === 1 && s2 === 0) || (s1 === 0 && s2 === 1)
     : (s1 === 2 && s2 === 0) || (s1 === 0 && s2 === 2) || (s1 === 3 && s2 === 0) || (s1 === 0 && s2 === 3);
 
+  const roundNames: Record<number, string> = { 1: 'Grand Final', 2: 'Semi Final', 3: 'Quarter Final', 4: 'Round of 16', 5: 'Round of 32' };
+  const roundName = roundNames[match.round] || `Round ${match.round}`;
+  const bracketLabel = match.bracket === 'winners' ? "Winner's Bracket" : match.bracket === 'losers' ? "Loser's Bracket" : '';
+
+  // Score visualization
+  const t1Score = `${'■'.repeat(s1)}${'□'.repeat(Math.max(0, (match.format === 'BO1' ? 1 : 3) - s1))}`;
+  const t2Score = `${'■'.repeat(s2)}${'□'.repeat(Math.max(0, (match.format === 'BO1' ? 1 : 3) - s2))}`;
+
+  const isT1Winner = s1 > s2;
+  const isT2Winner = s2 > s1;
+
   return new EmbedBuilder()
-    .setColor(color)
-    .setTitle(`🎵 Match Result — W${match.weekNumber} ${divEmoji} ${divLabel}`)
+    .setColor(div.color)
+    .setAuthor({
+      name: `${U.sword}  MATCH RESULT — W${match.weekNumber} ${div.emoji} ${div.label.toUpperCase()}`,
+      iconURL: BRAND.footerIcon,
+    })
     .setDescription(
-      `**${match.team1_name}** ${s1} - ${s2} **${match.team2_name}**\n\n` +
-      `🏆 Winner: **${winner}**${isSweep ? ' (Sweep!)' : ''}` +
-      (match.mvp_tag ? `\n💎 MVP: **${match.mvp_tag}**` : '')
+      `${U.divider}\n` +
+      `${roundName}${bracketLabel ? ` · ${bracketLabel}` : ''} · ${match.format}\n` +
+      `${U.dividerDot}\n\n` +
+      `${isT1Winner ? U.crown : '    '} **${match.team1_name}**\n` +
+      `${U.leftBar} ${t1Score}  **${s1}**\n\n` +
+      `          ${U.sword}  VS\n\n` +
+      `${isT2Winner ? U.crown : '    '} **${match.team2_name}**\n` +
+      `${U.leftBar} ${t2Score}  **${s2}**\n\n` +
+      `${U.dividerDot}\n` +
+      `${U.trophy} **${winner}** maju ke ronde selanjutnya!${isSweep ? ' _(Sweep!)_' : ''}` +
+      (match.mvp_tag ? `\n${U.gem} MVP: **${match.mvp_tag}**` : '')
     )
-    .setFooter({ text: 'TARKAM — idolmeta.fun' })
+    .setFooter({ text: BRAND.footerText, iconURL: BRAND.footerIcon })
     .setTimestamp(new Date(match.completedAt));
 }
 
+// ═══════════════════════════════════════════════════════════════
+//  PROFILE EMBED — Premium Edition
+// ═══════════════════════════════════════════════════════════════
+
 function buildProfileEmbed(player: any) {
-  const isMale = player.division === 'male';
-  const color = isMale ? C.male : C.female;
-  const divEmoji = isMale ? '♂' : '♀';
+  const div = divConfig(player.division);
+  const wr = winRate(player.totalWins, player.matches);
+  const ptsBar = progressBar(player.points, 500, 12);
 
   return new EmbedBuilder()
-    .setColor(color)
-    .setTitle(`${player.gamertag}`)
-    .setDescription(`${player.name} · ${divEmoji} ${isMale ? 'Cowo' : 'Cewe'}${player.city ? ` · 📍 ${player.city}` : ''}`)
-    .addFields(
-      { name: '⭐ Points', value: `${player.points}`, inline: true },
-      { name: '🏆 Wins', value: `${player.totalWins}`, inline: true },
-      { name: '💎 MVP', value: `${player.totalMvp}`, inline: true },
-      { name: '🔥 Streak', value: `${player.streak}`, inline: true },
-      { name: '🎮 Matches', value: `${player.matches}`, inline: true },
-      { name: '🏅 Tier', value: player.tier || 'Unranked', inline: true },
+    .setColor(div.color)
+    .setAuthor({
+      name: `${div.icon}  ${player.gamertag}`,
+      iconURL: BRAND.footerIcon,
+    })
+    .setDescription(
+      `${U.divider}\n` +
+      `${tierBadge(player.tier)} · ${div.emoji} ${div.label}` +
+      (player.city ? ` · 📍 ${player.city}` : '') +
+      `\n${U.dividerDot}\n` +
+      `${player.name}\n\n` +
+      `${U.divider}\n` +
+      `⭐  **POINTS**\n` +
+      `${U.leftBar} ${ptsBar}  **${fmtNum(player.points)}**\n\n` +
+      `${U.dividerDot}\n` +
+      `${U.trophy} **${player.totalWins}** Wins    ${U.gem} **${player.totalMvp}** MVP\n` +
+      `${U.fire} **${player.streak}** Streak (Max: ${player.maxStreak})    ${U.sword} **${player.matches}** Matches\n\n` +
+      `${U.divider}\n` +
+      `Win Rate: **${wr}**`
     )
-    .setFooter({ text: 'TARKAM — idolmeta.fun' })
+    .setFooter({ text: BRAND.footerTextFull, iconURL: BRAND.footerIcon })
     .setTimestamp();
 }
 
+// ═══════════════════════════════════════════════════════════════
+//  BRACKET EMBED — Premium Edition
+// ═══════════════════════════════════════════════════════════════
+
 function buildBracketEmbed(data: any) {
   const t = data.tournament;
-  const isMale = t.division === 'male';
-  const color = isMale ? C.male : C.female;
-  const divEmoji = isMale ? '♂' : '♀';
+  const div = divConfig(t.division);
   const matches = data.matches;
 
-  const roundNames: Record<number, string> = { 1: 'Final', 2: 'Semi Final', 3: 'Quarter Final', 4: 'Round of 16', 5: 'Round of 32' };
+  const roundNames: Record<number, string> = { 1: '🏁 Grand Final', 2: '⚡ Semi Final', 3: '🔸 Quarter Final', 4: '🔹 Round of 16', 5: '◾ Round of 32' };
 
   // Group by round
   const byRound: Record<number, any[]> = {};
@@ -367,72 +527,189 @@ function buildBracketEmbed(data: any) {
     byRound[r].push(m);
   }
 
-  const fields: any[] = [];
+  const descriptionParts: string[] = [];
+
   for (const [round, roundMatches] of Object.entries(byRound).sort((a, b) => Number(a[0]) - Number(b[0]))) {
-    const rName = roundNames[Number(round)] || `Round ${round}`;
-    const lines = roundMatches.map((m: any) => {
+    const rName = roundNames[Number(round)] || `🔘 Round ${round}`;
+    const bracketLabel = roundMatches[0]?.bracket === 'winners' ? "Winner's" : roundMatches[0]?.bracket === 'losers' ? "Loser's" : '';
+
+    descriptionParts.push(`\n${rName}${bracketLabel ? ` · ${bracketLabel}` : ''}`);
+
+    for (const m of roundMatches) {
       const s1 = m.score1 ?? '?';
       const s2 = m.score2 ?? '?';
-      const statusIcon = m.completedAt ? '✅' : m.status === 'live' ? '🔴' : '⏳';
-      const mvpTag = m.mvp_tag ? ` 💎${m.mvp_tag}` : '';
-      return `${statusIcon} **${m.team1_name}** ${s1}-${s2} **${m.team2_name}**${mvpTag}`;
-    });
-    fields.push({
-      name: `🎵 ${rName}`,
-      value: lines.join('\n'),
-      inline: false,
-    });
+      const statusIcon = m.completedAt ? U.check : m.status === 'live' ? U.live : U.pending;
+      const isT1Win = typeof s1 === 'number' && typeof s2 === 'number' && s1 > s2;
+      const isT2Win = typeof s1 === 'number' && typeof s2 === 'number' && s2 > s1;
+
+      const t1Display = isT1Win ? `**${m.team1_name}**` : m.team1_name;
+      const t2Display = isT2Win ? `**${m.team2_name}**` : m.team2_name;
+
+      const scoreLine = `${statusIcon}  ${t1Display}  \`${s1} — ${s2}\`  ${t2Display}`;
+      const mvpLine = m.mvp_tag ? `     ${U.gem} MVP: **${m.mvp_tag}**` : '';
+
+      descriptionParts.push(`${U.leftBar} ${scoreLine}`);
+      if (mvpLine) descriptionParts.push(`${U.leftBar} ${mvpLine}`);
+    }
   }
 
-  if (fields.length === 0) {
-    fields.push({ name: '📋 Belum ada match', value: 'Bracket belum tersedia untuk week ini', inline: false });
+  if (descriptionParts.length === 0) {
+    descriptionParts.push(`${U.divider}\n📋 Bracket belum tersedia untuk week ini\n${U.divider}`);
   }
+
+  // Status summary
+  const completedCount = matches.filter((m: any) => m.completedAt).length;
+  const liveCount = matches.filter((m: any) => m.status === 'live').length;
+  const pendingCount = matches.length - completedCount - liveCount;
+
+  const statusLine = [
+    completedCount > 0 ? `${U.check} ${completedCount} selesai` : '',
+    liveCount > 0 ? `${U.live} ${liveCount} live` : '',
+    pendingCount > 0 ? `${U.pending} ${pendingCount} menunggu` : '',
+  ].filter(Boolean).join(' · ') || 'Belum ada match';
 
   return new EmbedBuilder()
-    .setColor(color)
-    .setTitle(`🏁 Bracket W${t.weekNumber} ${divEmoji} ${isMale ? 'Cowo' : 'Cewe'}`)
-    .addFields(fields)
-    .setFooter({ text: 'TARKAM — idolmeta.fun' })
+    .setColor(div.color)
+    .setAuthor({
+      name: `${U.sword}  BRACKET W${t.weekNumber} ${div.emoji} ${div.label.toUpperCase()}`,
+      iconURL: BRAND.footerIcon,
+    })
+    .setDescription(
+      `${U.divider}\n` +
+      descriptionParts.join('\n') +
+      `\n${U.divider}\n` +
+      `${U.sparkles} ${statusLine} · ${matches.length} match total`
+    )
+    .setFooter({ text: BRAND.footerText, iconURL: BRAND.footerIcon })
     .setTimestamp();
 }
 
+// ═══════════════════════════════════════════════════════════════
+//  JADWAL EMBED — Premium Edition
+// ═══════════════════════════════════════════════════════════════
+
 function buildJadwalEmbed(tournaments: any[], week?: number) {
-  const fields = tournaments.map((t: any) => {
-    const emoji = t.division === 'male' ? '♂' : '♀';
-    const label = t.division === 'male' ? 'Cowo' : 'Cewe';
+  const description = tournaments.map((t: any) => {
+    const div = divConfig(t.division);
 
     const statusMap: Record<string, string> = {
       'setup': '⚙️ Setup',
-      'registration': '🟢 PENDAFTARAN',
-      'approval': '🔄 Approval',
+      'registration': '🟢 Pendaftaran Dibuka!',
+      'approval': '🔄 Approval Peserta',
       'team_generation': '🔀 Generate Tim',
       'bracket_generation': '🏁 Generate Bracket',
-      'main_event': '🎵 LIVE!',
+      'main_event': '🔴 LIVE — Berlangsung!',
       'finalization': '📋 Finalisasi',
       'completed': '✅ Selesai',
     };
     const status = statusMap[t.status] || `❓ ${t.status}`;
-    const prizeStr = t.prizePool ? ` · 💰 Rp ${(t.prizePool/1000).toFixed(0)}K` : '';
+    const prizeStr = t.prizePool ? `\n${U.leftBar} 💰 Prize: Rp ${fmtNum(t.prizePool)}` : '';
 
-    return {
-      name: `${emoji} ${label} — W${t.weekNumber}`,
-      value: `Status: ${status}${prizeStr}`,
-      inline: true,
-    };
-  });
+    const isLive = t.status === 'main_event' || t.status === 'finalization';
+    const isRegOpen = t.status === 'registration' || t.status === 'approval';
 
-  if (fields.length === 0) {
-    fields.push({ name: '📋 Tidak ada turnamen', value: week ? `Tidak ada turnamen W${week}` : 'Belum ada season berjalan', inline: false });
-  }
+    return (
+      `${isLive ? U.live : isRegOpen ? '🟢' : div.icon} **W${t.weekNumber} ${div.emoji} ${div.label}**\n` +
+      `${U.leftBar} ${status}${prizeStr}`
+    );
+  }).join(`\n${U.dividerDot}\n`);
 
-  const title = week ? `📅 Jadwal Turnamen — W${week}` : '📅 Jadwal Turnamen';
+  const title = week ? `📅 JADWAL — W${week}` : '📅 JADWAL TURNAMEN';
 
   return new EmbedBuilder()
     .setColor(C.gold)
-    .setTitle(title)
-    .setDescription('Status turnamen season berjalan')
-    .addFields(fields)
-    .setFooter({ text: 'TARKAM — idolmeta.fun | Cek lengkap di idolmeta.fun' })
+    .setAuthor({
+      name: title,
+      iconURL: BRAND.footerIcon,
+    })
+    .setDescription(
+      `${U.divider}\n` +
+      (description || '📋 Belum ada turnamen aktif') +
+      `\n${U.divider}\n` +
+      `${U.sparkles} Cek lengkap di ${BRAND.url}`
+    )
+    .setFooter({ text: BRAND.footerText, iconURL: BRAND.footerIcon })
+    .setTimestamp();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  STATS EMBED — Premium Edition
+// ═══════════════════════════════════════════════════════════════
+
+function buildStatsEmbed(stats: any) {
+  return new EmbedBuilder()
+    .setColor(C.gold)
+    .setAuthor({
+      name: `${U.sparkles}  TARKAM STATISTIK`,
+      iconURL: BRAND.footerIcon,
+    })
+    .setDescription(
+      `${U.divider}\n` +
+      `👥  **PEMAIN AKTIF**\n` +
+      `${U.leftBar} ${progressBar(stats.totalPlayers, 100, 12)}  **${fmtNum(stats.totalPlayers)}**\n\n` +
+      `${U.sword}  **MATCH SELESAI**\n` +
+      `${U.leftBar} ${progressBar(stats.totalMatches, 100, 12)}  **${fmtNum(stats.totalMatches)}**\n\n` +
+      `${U.trophy}  **SEASON AKTIF**\n` +
+      `${U.leftBar} Season **${stats.activeSeason}**\n\n` +
+      `${U.music}  **TURNAMEN AKTIF**\n` +
+      `${U.leftBar} **${stats.activeTournaments}** turnamen berjalan\n` +
+      `${U.divider}\n` +
+      `${U.sparkles} Data real-time dari ${BRAND.url}`
+    )
+    .setFooter({ text: BRAND.footerTextFull, iconURL: BRAND.footerIcon })
+    .setTimestamp();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  REACTION ROLES EMBED — Premium Edition
+// ═══════════════════════════════════════════════════════════════
+
+function buildReactionRolesEmbed() {
+  return new EmbedBuilder()
+    .setColor(C.gold)
+    .setAuthor({
+      name: `${U.sparkles}  PILIH ROLE KAMU`,
+      iconURL: BRAND.footerIcon,
+    })
+    .setDescription(
+      `${U.divider}\n` +
+      `React dengan emoji di bawah untuk mendapat role:\n\n` +
+      `🟢  —  🎮 **Peserta Cowo**\n` +
+      `🔴  —  💃 **Peserta Cewe**\n` +
+      `💎  —  💎 **Supporter**\n` +
+      `🎵  —  🎵 **Idol Meta Fan**\n` +
+      `${U.divider}\n` +
+      `${U.sparkles} Klik emoji untuk auto-assign role`
+    )
+    .setFooter({ text: BRAND.footerText, iconURL: BRAND.footerIcon });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MATCH ANNOUNCEMENT EMBED — Premium Edition
+// ═══════════════════════════════════════════════════════════════
+
+function buildMatchAnnouncementEmbed(newMatches: any[]) {
+  const div = divConfig(newMatches[0].division);
+  const matchLines = newMatches.map((m: any) => {
+    const s1 = m.score1 ?? 0;
+    const s2 = m.score2 ?? 0;
+    const winner = s1 > s2 ? m.team1_name : m.team2_name;
+    return `${U.check} **${m.team1_name}** \`${s1} — ${s2}\` **${m.team2_name}** → **${winner}**`;
+  });
+
+  return new EmbedBuilder()
+    .setColor(C.gold)
+    .setAuthor({
+      name: `${U.sparkles}  ${newMatches.length} MATCH BARU! — W${newMatches[0].weekNumber} ${div.emoji} ${div.label.toUpperCase()}`,
+      iconURL: BRAND.footerIcon,
+    })
+    .setDescription(
+      `${U.divider}\n` +
+      matchLines.join('\n') +
+      `\n${U.divider}\n` +
+      `${U.sparkles} Detail lengkap di ${BRAND.url}`
+    )
+    .setFooter({ text: BRAND.footerText, iconURL: BRAND.footerIcon })
     .setTimestamp();
 }
 
@@ -447,7 +724,7 @@ async function handleLeaderboard(interaction: ChatInputCommandInteraction) {
   try {
     const players = await getLeaderboard(division, 10);
     if (!players.length) {
-      await interaction.editReply('Belum ada data leaderboard untuk divisi ini.');
+      await interaction.editReply(`${U.divider}\n📋 Belum ada data leaderboard untuk divisi ini.\n${U.divider}`);
       return;
     }
     const embed = buildLeaderboardEmbed(players, division);
@@ -466,8 +743,9 @@ async function handleBracket(interaction: ChatInputCommandInteraction) {
   try {
     const data = await getBracket(division, week);
     if (!data) {
+      const div = divConfig(division);
       const weekStr = week ? ` W${week}` : '';
-      await interaction.editReply(`Belum ada bracket untuk ${division === 'male' ? 'Cowo' : 'Cewe'}${weekStr}.`);
+      await interaction.editReply(`${U.divider}\n📋 Belum ada bracket untuk ${div.emoji} ${div.label}${weekStr}.\n${U.divider}`);
       return;
     }
     const embed = buildBracketEmbed(data);
@@ -486,7 +764,7 @@ async function handleSkor(interaction: ChatInputCommandInteraction) {
   try {
     const matches = await getRecentMatchResults(limit, division, week);
     if (!matches.length) {
-      await interaction.editReply('Belum ada hasil pertandingan.');
+      await interaction.editReply(`${U.divider}\n📋 Belum ada hasil pertandingan.\n${U.divider}`);
       return;
     }
     const embeds = matches.map((m: any) => buildMatchResultEmbed(m));
@@ -503,7 +781,7 @@ async function handleProfil(interaction: ChatInputCommandInteraction) {
   try {
     const player = await getPlayerByGamertag(gamertag);
     if (!player) {
-      await interaction.editReply(`Pemain dengan gamertag "${gamertag}" tidak ditemukan.`);
+      await interaction.editReply(`${U.divider}\n📋 Pemain **"${gamertag}"** tidak ditemukan.\n${U.divider}`);
       return;
     }
     const embed = buildProfileEmbed(player);
@@ -534,17 +812,7 @@ async function handleStats(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
   try {
     const stats = await getStats();
-    const embed = new EmbedBuilder()
-      .setColor(C.gold)
-      .setTitle('📊 Statistik TARKAM')
-      .addFields(
-        { name: '👥 Total Pemain', value: `${stats.totalPlayers}`, inline: true },
-        { name: '🎵 Match Selesai', value: `${stats.totalMatches}`, inline: true },
-        { name: '🏆 Season Aktif', value: `${stats.activeSeason}`, inline: true },
-        { name: '🎮 Turnamen Aktif', value: `${stats.activeTournaments}`, inline: true },
-      )
-      .setFooter({ text: 'TARKAM — idolmeta.fun' })
-      .setTimestamp();
+    const embed = buildStatsEmbed(stats);
     await interaction.editReply({ embeds: [embed] });
   } catch (err) {
     console.error(`  ❌ Stats error:`, err);
@@ -562,14 +830,12 @@ async function checkNewMatchResults() {
     if (!latest) return;
 
     if (lastMatchResultId === null) {
-      // First run — just record the latest, don't post
       lastMatchResultId = latest.id;
       return;
     }
 
-    if (latest.id === lastMatchResultId) return; // No new matches
+    if (latest.id === lastMatchResultId) return;
 
-    // Get all new matches since last check
     const newMatches = await sql`
       SELECT m.id, m.round, m."matchNumber", m.bracket, m.format,
         m."score1", m."score2", m.status, m."completedAt",
@@ -608,24 +874,7 @@ async function checkNewMatchResults() {
     const annChannel = annChannelId ? client.channels.cache.get(annChannelId) as TextChannel | undefined : null;
 
     if (annChannel && newMatches.length > 0) {
-      const isMale = newMatches[0].division === 'male';
-      const divEmoji = isMale ? '♂' : '♀';
-      const divLabel = isMale ? 'Cowo' : 'Cewe';
-
-      const embed = new EmbedBuilder()
-        .setColor(C.gold)
-        .setTitle(`🔔 ${newMatches.length} Match Baru Selesai! — W${newMatches[0].weekNumber} ${divEmoji} ${divLabel}`)
-        .setDescription(
-          newMatches.map((m: any) => {
-            const s1 = m.score1 ?? 0;
-            const s2 = m.score2 ?? 0;
-            const winner = s1 > s2 ? m.team1_name : m.team2_name;
-            return `✅ **${m.team1_name}** ${s1}-${s2} **${m.team2_name}** → Winner: **${winner}**`;
-          }).join('\n')
-        )
-        .setFooter({ text: 'TARKAM — idolmeta.fun' })
-        .setTimestamp();
-
+      const embed = buildMatchAnnouncementEmbed(newMatches);
       await annChannel.send({ embeds: [embed] });
     }
 
@@ -654,7 +903,6 @@ async function updateLeaderboardMessages() {
 
       const embed = buildLeaderboardEmbed(players, division);
 
-      // Try to edit existing message, or post new one
       const existingMsgId = leaderboardMessageIds[division];
       if (existingMsgId) {
         try {
@@ -667,7 +915,6 @@ async function updateLeaderboardMessages() {
         }
       }
 
-      // Post new message
       const msg = await channel.send({ embeds: [embed] });
       leaderboardMessageIds[division] = msg.id;
       console.log(`  📊 Posted leaderboard: ${division}`);
@@ -695,12 +942,10 @@ async function setupReactionRoles() {
   const channel = client.channels.cache.get(channelId) as TextChannel | undefined;
   if (!channel) return;
 
-  // Find the bot's embed message
   const messages = await channel.messages.fetch({ limit: 10 });
   const botMsg = messages.find(m => m.author.id === client.user?.id && m.embeds.length > 0);
 
   if (botMsg) {
-    // Add reactions if not already present
     const existingReactions = botMsg.reactions.cache.map(r => r.emoji.name);
     for (const emoji of Object.keys(REACTION_ROLES)) {
       if (!existingReactions.includes(emoji)) {
@@ -709,19 +954,7 @@ async function setupReactionRoles() {
     }
     console.log('✅ Reaction roles set up');
   } else {
-    // Create the role selection embed
-    const embed = new EmbedBuilder()
-      .setColor(C.gold)
-      .setTitle('🎭 Pilih Role Kamu!')
-      .setDescription(
-        'React dengan emoji di bawah untuk mendapat role:\n\n' +
-        '🟢 — 🎮 Peserta Cowo\n' +
-        '🔴 — 💃 Peserta Cewe\n' +
-        '💎 — 💎 Supporter\n' +
-        '🎵 — 🎵 Idol Meta Fan'
-      )
-      .setFooter({ text: 'TARKAM — idolmeta.fun' });
-
+    const embed = buildReactionRolesEmbed();
     const msg = await channel.send({ embeds: [embed] });
     for (const emoji of Object.keys(REACTION_ROLES)) {
       await msg.react(emoji);
@@ -738,7 +971,6 @@ async function resolveChannels() {
   const guild = client.guilds.cache.get(GUILD_ID);
   if (!guild) return;
 
-  // Fetch all channels to ensure cache is populated
   await guild.channels.fetch();
 
   const nameMap: Record<string, string> = {
@@ -775,29 +1007,18 @@ const client = new Client({
   ],
 });
 
-// discord.js v14 uses 'ready' event
 client.once(Events.ClientReady, async () => {
-  console.log(`🤖 TARKAM Bot online: ${client.user?.tag}`);
+  console.log(`${U.sparkles} TARKAM Bot Premium online: ${client.user?.tag}`);
 
-  // Resolve channels
   await resolveChannels();
-
-  // Register slash commands
   await registerCommands();
-
-  // Setup reaction roles
   setupReactionRoles().catch(console.error);
-
-  // Initialize state
   getLatestCompletedMatch().then(m => { if (m) lastMatchResultId = m.id; }).catch(console.error);
-
-  // Initial leaderboard post
   updateLeaderboardMessages().catch(console.error);
 
   console.log('✅ Bot fully initialized!');
-  console.log('📋 Slash commands: /leaderboard /bracket /skor /profil /jadwal /stats');
+  console.log('📋 Commands: /leaderboard /bracket /skor /profil /jadwal /stats');
 
-  // ═══ POLLING LOOPS ═══
   setInterval(checkNewMatchResults, 2 * 60 * 1000);
   console.log('⏰ Polling: match results (every 2 min)');
 
@@ -805,7 +1026,6 @@ client.once(Events.ClientReady, async () => {
   console.log('⏰ Polling: leaderboard update (every 30 min)');
 });
 
-// ═══ HANDLE SLASH COMMANDS ═══
 client.on(Events.InteractionCreate, async (interaction: Interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
@@ -837,11 +1057,9 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
   }
 });
 
-// ═══ HANDLE REACTION ROLES ═══
 client.on(Events.MessageReactionAdd, async (reaction: MessageReaction, user: User) => {
   if (user.bot) return;
 
-  // Ensure partial reactions are fetched
   if (reaction.partial) {
     try { await reaction.fetch(); } catch { return; }
   }
