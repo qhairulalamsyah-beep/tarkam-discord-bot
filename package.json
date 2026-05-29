@@ -1,0 +1,13 @@
+{
+  "name": "tarkam-bot",
+  "version": "1.0.0",
+  "description": "TARKAM Discord Bot — Auto-posting tournament updates, slash commands, reaction roles",
+  "scripts": {
+    "dev": "bun --hot index.ts",
+    "start": "bun index.ts"
+  },
+  "dependencies": {
+    "discord.js": "^14.16.3",
+    "@neondatabase/serverless": "^1.0.0"
+  }
+}
