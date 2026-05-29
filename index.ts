@@ -32,7 +32,7 @@ const BOT_TOKEN = process.env.BOT_TOKEN!;
 const APP_ID = process.env.APP_ID || '1488261162205184051';
 const GUILD_ID = process.env.GUILD_ID || '1510008183329132634';
 const DATABASE_URL = process.env.DATABASE_URL!;
-const PORT = 3004;
+const PORT = parseInt(process.env.PORT || '3004', 10);
 
 if (!BOT_TOKEN || !DATABASE_URL) {
   console.error('❌ BOT_TOKEN and DATABASE_URL are required');

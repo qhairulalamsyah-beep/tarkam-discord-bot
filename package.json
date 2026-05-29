@@ -1,13 +1,19 @@
 {
-  "name": "tarkam-bot",
+  "name": "tarkam-discord-bot",
   "version": "1.0.0",
   "description": "TARKAM Discord Bot — Auto-posting tournament updates, slash commands, reaction roles",
+  "main": "index.js",
   "scripts": {
-    "dev": "bun --hot index.ts",
-    "start": "bun index.ts"
+    "build": "npx tsc index.ts --outDir dist --module commonjs --target ES2020 --esModuleInterop --skipLibCheck --moduleResolution node || echo 'TypeScript compile skipped, using tsx'",
+    "start": "npx tsx index.ts",
+    "dev": "npx tsx watch index.ts"
   },
   "dependencies": {
     "discord.js": "^14.16.3",
     "@neondatabase/serverless": "^1.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.0.0"
   }
 }
