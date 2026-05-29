@@ -87,7 +87,7 @@ async function getActiveTournaments() {
   `;
 }
 
-async function getRecentMatchResults(limit = 5) {
+async function getRecentMatchResults(limit = 5, division?: string, weekNumber?: number) {
   return queryWithTimeout(sql`
     SELECT m.id, m.round, m."matchNumber", m.bracket, m.format,
       m."score1", m."score2", m.status, m."completedAt",
@@ -99,7 +99,10 @@ async function getRecentMatchResults(limit = 5) {
     JOIN "Team" t2 ON m."team2Id" = t2.id
     LEFT JOIN "Player" mvp ON m."mvpPlayerId" = mvp.id
     JOIN "Tournament" t ON m."tournamentId" = t.id
-    WHERE m."completedAt" IS NOT NULL
+    JOIN "Season" s ON t."seasonId" = s.id
+    WHERE m."completedAt" IS NOT NULL AND s.status = 'active'
+      ${division ? sql`AND t.division = ${division}` : sql``}
+      ${weekNumber ? sql`AND t."weekNumber" = ${weekNumber}` : sql``}
     ORDER BY m."completedAt" DESC
     LIMIT ${limit}
   `);
@@ -129,12 +132,13 @@ async function getPlayerByGamertag(gamertag: string) {
   return rows[0] || null;
 }
 
-async function getBracket(division: string) {
+async function getBracket(division: string, weekNumber?: number) {
   const tournaments = await sql`
     SELECT t.id, t.name, t."weekNumber", t.division, t.status, t.format
     FROM "Tournament" t
     JOIN "Season" s ON t."seasonId" = s.id
     WHERE s.status = 'active' AND t.division = ${division}
+      ${weekNumber ? sql`AND t."weekNumber" = ${weekNumber}` : sql``}
     ORDER BY t."weekNumber" DESC
     LIMIT 1
   `;
@@ -217,19 +221,26 @@ const COMMANDS = [
     .addStringOption(o => o.setName('divisi').setDescription('Pilih divisi').addChoices(
       { name: '♂ Cowo', value: 'male' },
       { name: '♀ Cewe', value: 'female' },
-    ).setRequired(false)),
+    ).setRequired(false))
+    .addIntegerOption(o => o.setName('week').setDescription('Week ke berapa (kosongkan = season ini)').setMinValue(1).setMaxValue(20)),
 
   new SlashCommandBuilder()
     .setName('bracket')
-    .setDescription('Lihat bracket turnamen minggu ini')
+    .setDescription('Lihat bracket turnamen')
     .addStringOption(o => o.setName('divisi').setDescription('Pilih divisi').addChoices(
       { name: '♂ Cowo', value: 'male' },
       { name: '♀ Cewe', value: 'female' },
-    ).setRequired(false)),
+    ).setRequired(false))
+    .addIntegerOption(o => o.setName('week').setDescription('Week ke berapa (kosongkan = week terbaru)').setMinValue(1).setMaxValue(20)),
 
   new SlashCommandBuilder()
     .setName('skor')
     .setDescription('Lihat hasil pertandingan terbaru')
+    .addStringOption(o => o.setName('divisi').setDescription('Pilih divisi').addChoices(
+      { name: '♂ Cowo', value: 'male' },
+      { name: '♀ Cewe', value: 'female' },
+    ).setRequired(false))
+    .addIntegerOption(o => o.setName('week').setDescription('Week ke berapa (kosongkan = semua)').setMinValue(1).setMaxValue(20))
     .addIntegerOption(o => o.setName('jumlah').setDescription('Jumlah match (1-10)').setMinValue(1).setMaxValue(10)),
 
   new SlashCommandBuilder()
@@ -239,7 +250,8 @@ const COMMANDS = [
 
   new SlashCommandBuilder()
     .setName('jadwal')
-    .setDescription('Lihat jadwal & status turnamen'),
+    .setDescription('Lihat jadwal & status turnamen')
+    .addIntegerOption(o => o.setName('week').setDescription('Week ke berapa (kosongkan = semua)').setMinValue(1).setMaxValue(20)),
 
   new SlashCommandBuilder()
     .setName('stats')
@@ -384,7 +396,7 @@ function buildBracketEmbed(data: any) {
     .setTimestamp();
 }
 
-function buildJadwalEmbed(tournaments: any[]) {
+function buildJadwalEmbed(tournaments: any[], week?: number) {
   const fields = tournaments.map((t: any) => {
     const emoji = t.division === 'male' ? '♂' : '♀';
     const label = t.division === 'male' ? 'Cowo' : 'Cewe';
@@ -403,19 +415,21 @@ function buildJadwalEmbed(tournaments: any[]) {
     const prizeStr = t.prizePool ? ` · 💰 Rp ${(t.prizePool/1000).toFixed(0)}K` : '';
 
     return {
-      name: `${emoji} ${label} — Week ${t.weekNumber}`,
+      name: `${emoji} ${label} — W${t.weekNumber}`,
       value: `Status: ${status}${prizeStr}`,
       inline: true,
     };
   });
 
   if (fields.length === 0) {
-    fields.push({ name: '📋 Tidak ada turnamen aktif', value: 'Belum ada season berjalan', inline: false });
+    fields.push({ name: '📋 Tidak ada turnamen', value: week ? `Tidak ada turnamen W${week}` : 'Belum ada season berjalan', inline: false });
   }
+
+  const title = week ? `📅 Jadwal Turnamen — W${week}` : '📅 Jadwal Turnamen';
 
   return new EmbedBuilder()
     .setColor(C.gold)
-    .setTitle('📅 Jadwal Turnamen')
+    .setTitle(title)
     .setDescription('Status turnamen season berjalan')
     .addFields(fields)
     .setFooter({ text: 'TARKAM — idolmeta.fun | Cek lengkap di idolmeta.fun' })
@@ -448,10 +462,12 @@ async function handleLeaderboard(interaction: ChatInputCommandInteraction) {
 async function handleBracket(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
   const division = interaction.options.getString('divisi') || 'male';
+  const week = interaction.options.getInteger('week') || undefined;
   try {
-    const data = await getBracket(division);
+    const data = await getBracket(division, week);
     if (!data) {
-      await interaction.editReply('Belum ada bracket untuk divisi ini.');
+      const weekStr = week ? ` W${week}` : '';
+      await interaction.editReply(`Belum ada bracket untuk ${division === 'male' ? 'Cowo' : 'Cewe'}${weekStr}.`);
       return;
     }
     const embed = buildBracketEmbed(data);
@@ -465,8 +481,10 @@ async function handleBracket(interaction: ChatInputCommandInteraction) {
 async function handleSkor(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
   const limit = interaction.options.getInteger('jumlah') || 5;
+  const division = interaction.options.getString('divisi') || undefined;
+  const week = interaction.options.getInteger('week') || undefined;
   try {
-    const matches = await getRecentMatchResults(limit);
+    const matches = await getRecentMatchResults(limit, division, week);
     if (!matches.length) {
       await interaction.editReply('Belum ada hasil pertandingan.');
       return;
@@ -498,9 +516,13 @@ async function handleProfil(interaction: ChatInputCommandInteraction) {
 
 async function handleJadwal(interaction: ChatInputCommandInteraction) {
   await interaction.deferReply();
+  const week = interaction.options.getInteger('week') || undefined;
   try {
-    const tournaments = await getTournamentStatus();
-    const embed = buildJadwalEmbed(tournaments);
+    let tournaments = await getTournamentStatus();
+    if (week) {
+      tournaments = tournaments.filter((t: any) => t.weekNumber === week);
+    }
+    const embed = buildJadwalEmbed(tournaments, week);
     await interaction.editReply({ embeds: [embed] });
   } catch (err) {
     console.error(`  ❌ Jadwal error:`, err);
